@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +57,7 @@ export const DoctorForm = ({
   submitLabel 
 }: DoctorFormProps) => {
   const [doctor, setDoctor] = useState<Omit<Doctor, 'id'> | Doctor>(
-    initialData || {
+    {
       name: "",
       specialization: "",
       email: "",
@@ -66,6 +66,23 @@ export const DoctorForm = ({
       available: true
     }
   );
+  
+  // Update form when initialData changes or when dialog opens
+  useEffect(() => {
+    if (initialData && open) {
+      setDoctor(initialData);
+    } else if (!open) {
+      // Reset form when dialog closes
+      setDoctor({
+        name: "",
+        specialization: "",
+        email: "",
+        phone: "",
+        schedule: "",
+        available: true
+      });
+    }
+  }, [initialData, open]);
 
   const handleChange = (field: keyof Doctor, value: string | boolean) => {
     setDoctor({ ...doctor, [field]: value });
