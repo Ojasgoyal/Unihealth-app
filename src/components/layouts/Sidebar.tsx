@@ -1,259 +1,98 @@
-
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
+  Home,
   Calendar,
-  LayoutDashboard,
+  Search,
   Users,
-  UserPlus,
-  ClipboardList,
-  FileText,
-  Bell,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Hospital,
+  LayoutDashboard,
+  ListChecks,
   User,
-  Bed,
 } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
-type SidebarProps = {
-  userRole: "admin" | "patient";
-};
+interface SidebarProps {
+  className?: string;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}
 
-export const Sidebar = ({ userRole }: SidebarProps) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { pathname } = useLocation();
+export function Sidebar({
+  className,
+  open,
+  setOpen
+}: SidebarProps) {
+  const pathname = useLocation().pathname;
+  const { user, isAdmin } = useAuth();
 
-  const toggleSidebar = () => {
-    setCollapsed(!collapsed);
-  };
-
-  const toggleMobileSidebar = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const adminNavItems = [
-    {
-      title: "Dashboard",
-      href: "/admin-dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      title: "Doctors",
-      href: "/admin/doctors",
-      icon: Users,
-    },
-    {
-      title: "Bed Availability",
-      href: "/admin/beds",
-      icon: Bed,
-    },
-    {
-      title: "Appointments",
-      href: "/admin/appointments",
-      icon: Calendar,
-    },
-    {
-      title: "Prescriptions",
-      href: "/admin/prescriptions",
-      icon: FileText,
-    },
-  ];
-
-  const patientNavItems = [
+  const patientRoutes = [
     {
       title: "Dashboard",
       href: "/patient-dashboard",
-      icon: LayoutDashboard,
+      icon: <Home className="h-4 w-4" />,
+      active: pathname === "/patient-dashboard",
+    },
+    {
+      title: "Appointments",
+      href: "/patient/appointments",
+      icon: <Calendar className="h-4 w-4" />,
+      active: pathname === "/patient/appointments",
     },
     {
       title: "Find Doctor",
       href: "/patient/find-doctor",
-      icon: UserPlus,
-    },
-    {
-      title: "My Appointments",
-      href: "/patient/appointments",
-      icon: Calendar,
-    },
-    {
-      title: "My Prescriptions",
-      href: "/patient/prescriptions",
-      icon: ClipboardList,
+      icon: <Search className="h-4 w-4" />,
+      active: pathname === "/patient/find-doctor",
     },
   ];
 
-  const navItems = userRole === "admin" ? adminNavItems : patientNavItems;
+  const adminRoutes = [
+    {
+      title: "Dashboard",
+      href: "/admin-dashboard",
+      icon: <Home className="h-4 w-4" />,
+      active: pathname === "/admin-dashboard",
+    },
+    {
+      title: "Doctors",
+      href: "/admin/doctors",
+      icon: <Users className="h-4 w-4" />,
+      active: pathname === "/admin/doctors",
+    },
+  ];
+
+  const routes = isAdmin ? adminRoutes : patientRoutes;
 
   return (
-    <>
-      {/* Mobile Overlay */}
-      {mobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Mobile Toggle Button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={toggleMobileSidebar}
-          className="bg-white"
-        >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-        </Button>
+    <aside
+      className={`fixed left-0 top-14 z-20 h-[calc(100vh-3.5rem)] w-72 flex-col overflow-y-auto border-r border-r-border bg-background pt-5 pb-4 transition-transform duration-300 ease-in-out dark:border-r-muted ${
+        open ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0 ${className}`}
+    >
+      <div className="flex flex-col space-y-1">
+        <div className="flex-1 space-y-2 p-6">
+          <h2 className="pb-2 text-lg font-semibold tracking-tight">
+            {isAdmin ? "Admin" : "Patient"}
+          </h2>
+          <div className="space-y-1">
+            {routes.map((route) => (
+              <NavLink
+                key={route.href}
+                to={route.href}
+                className={({ isActive }) =>
+                  `group flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none ${
+                    isActive
+                      ? "bg-secondary text-secondary-foreground"
+                      : "text-muted-foreground"
+                  }`
+                }
+              >
+                {route.icon}
+                <span>{route.title}</span>
+              </NavLink>
+            ))}
+          </div>
+        </div>
       </div>
-
-      {/* Sidebar for Mobile */}
-      <aside
-        className={cn(
-          "fixed top-0 left-0 z-50 h-full bg-white border-r border-gray-200 transition-all duration-300 md:hidden",
-          mobileOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"
-        )}
-      >
-        <div className="h-full flex flex-col">
-          <div className="p-4 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {userRole === "admin" ? (
-                <Hospital className="h-6 w-6 text-healthcare-primary" />
-              ) : (
-                <User className="h-6 w-6 text-healthcare-primary" />
-              )}
-              <span className="font-semibold text-lg">
-                {userRole === "admin" ? "Admin Panel" : "Patient Portal"}
-              </span>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleMobileSidebar}
-            >
-              <X size={18} />
-            </Button>
-          </div>
-
-          <Separator />
-
-          <div className="flex-1 overflow-y-auto py-4">
-            <nav className="space-y-1 px-2">
-              {navItems.map((item, i) => (
-                <Link
-                  key={i}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
-                    pathname === item.href
-                      ? "bg-healthcare-light text-healthcare-primary"
-                      : "hover:bg-gray-100 text-gray-700"
-                  )}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          <div className="p-4 border-t border-gray-200">
-            <Link
-              to="/settings"
-              className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700"
-            >
-              <Settings className="h-5 w-5" />
-              <span>Settings</span>
-            </Link>
-            <Link
-              to="/"
-              className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Logout</span>
-            </Link>
-          </div>
-        </div>
-      </aside>
-
-      {/* Sidebar for Desktop */}
-      <aside
-        className={cn(
-          "hidden md:block h-full bg-white border-r border-gray-200 transition-all duration-300",
-          collapsed ? "w-[70px]" : "w-64"
-        )}
-      >
-        <div className="h-full flex flex-col">
-          <div className="p-4 flex items-center">
-            {userRole === "admin" ? (
-              <Hospital className="h-6 w-6 text-healthcare-primary" />
-            ) : (
-              <User className="h-6 w-6 text-healthcare-primary" />
-            )}
-            {!collapsed && (
-              <span className="ml-2 font-semibold text-lg">
-                {userRole === "admin" ? "Admin Panel" : "Patient Portal"}
-              </span>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="ml-auto"
-            >
-              <Menu size={18} />
-            </Button>
-          </div>
-
-          <Separator />
-
-          <div className="flex-1 overflow-y-auto py-4">
-            <nav className="space-y-1 px-2">
-              {navItems.map((item, i) => (
-                <Link
-                  key={i}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 rounded-md transition-colors",
-                    pathname === item.href
-                      ? "bg-healthcare-light text-healthcare-primary"
-                      : "hover:bg-gray-100 text-gray-700"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {!collapsed && <span className="ml-3">{item.title}</span>}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          <div className="p-4 border-t border-gray-200">
-            <Link
-              to="/settings"
-              className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700"
-            >
-              <Settings className="h-5 w-5" />
-              {!collapsed && <span className="ml-3">Settings</span>}
-            </Link>
-            <Link
-              to="/"
-              className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700"
-            >
-              <LogOut className="h-5 w-5" />
-              {!collapsed && <span className="ml-3">Logout</span>}
-            </Link>
-          </div>
-        </div>
-      </aside>
-    </>
+    </aside>
   );
-};
-
-export default Sidebar;
+}

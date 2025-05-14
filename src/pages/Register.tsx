@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,10 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast";
 import { Hospital, UserRound } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { signUp } from "@/services/authService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -22,6 +25,11 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+
+  // Redirect if user is already logged in
+  if (user) {
+    return <Navigate to="/patient-dashboard" replace />;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -44,19 +52,24 @@ const Register = () => {
     setLoading(true);
     
     try {
-      // This is where we would register with Supabase
-      // For now, we'll simulate registration with a timeout
-      setTimeout(() => {
-        navigate("/patient-dashboard");
-        toast({
-          title: "Registration successful",
-          description: "Welcome to MediConnect!",
-        });
-      }, 1000);
-    } catch (error) {
+      await signUp(
+        formData.email,
+        formData.password,
+        formData.firstName,
+        formData.lastName,
+        formData.phone
+      );
+      
+      toast({
+        title: "Registration successful",
+        description: "Welcome to Unihealth! Please check your email for verification.",
+      });
+      
+      // Note: We don't need to navigate manually since Auth context will handle this
+    } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: "An error occurred during registration. Please try again.",
+        description: error.message || "An error occurred during registration. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -71,7 +84,7 @@ const Register = () => {
           <div className="flex justify-center">
             <Hospital className="h-12 w-12 text-healthcare-primary" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">MediConnect</h2>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Unihealth</h2>
           <p className="mt-2 text-sm text-gray-600">Create your patient account</p>
         </div>
         

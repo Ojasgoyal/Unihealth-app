@@ -32,9 +32,11 @@ import {
   deleteDoctor,
   toggleDoctorAvailability
 } from "@/services/doctorsService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DoctorsManagement = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -63,7 +65,7 @@ const DoctorsManagement = () => {
       });
       setAddDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error adding doctor",
         description: error.message,
@@ -82,7 +84,7 @@ const DoctorsManagement = () => {
       });
       setEditDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error updating doctor",
         description: error.message,
@@ -102,7 +104,7 @@ const DoctorsManagement = () => {
       });
       setDeleteDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error removing doctor",
         description: error.message,
@@ -121,7 +123,7 @@ const DoctorsManagement = () => {
         description: `${data.name} is now ${data.available ? 'available' : 'unavailable'}.`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Error updating availability",
         description: error.message,
@@ -183,6 +185,7 @@ const DoctorsManagement = () => {
           <Button 
             className="bg-healthcare-primary"
             onClick={() => setAddDialogOpen(true)}
+            disabled={!isAdmin}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Doctor
           </Button>
@@ -240,6 +243,7 @@ const DoctorsManagement = () => {
                             : "text-red-600 hover:text-red-700"
                         }`}
                         onClick={() => handleToggleAvailability(doctor)}
+                        disabled={!isAdmin}
                       >
                         {doctor.available ? (
                           <>
@@ -270,6 +274,7 @@ const DoctorsManagement = () => {
                               setCurrentDoctor(doctor);
                               setEditDialogOpen(true);
                             }}
+                            disabled={!isAdmin}
                           >
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
@@ -280,6 +285,7 @@ const DoctorsManagement = () => {
                               setDeleteDialogOpen(true);
                             }}
                             className="text-red-600 focus:text-red-600"
+                            disabled={!isAdmin}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Remove
