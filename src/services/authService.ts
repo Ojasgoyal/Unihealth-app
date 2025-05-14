@@ -70,7 +70,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     return null;
   }
   
-  return data;
+  return data as UserProfile;
 }
 
 export async function isAdmin(userId: string): Promise<boolean> {

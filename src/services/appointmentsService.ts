@@ -46,7 +46,7 @@ export const getAppointmentsForPatient = async (patientId: string): Promise<Appo
     throw error;
   }
   
-  return data || [];
+  return (data || []) as unknown as AppointmentWithDoctor[];
 };
 
 export const getAppointmentsForDoctor = async (doctorId: string): Promise<AppointmentWithPatient[]> => {
@@ -64,10 +64,10 @@ export const getAppointmentsForDoctor = async (doctorId: string): Promise<Appoin
     throw error;
   }
   
-  return data || [];
+  return (data || []) as unknown as AppointmentWithPatient[];
 };
 
-export const getAllAppointments = async (): Promise<AppointmentWithPatient & {doctor: {name: string}}[]> => {
+export const getAllAppointments = async () => {
   const { data, error } = await supabase
     .from('appointments')
     .select(`
@@ -97,7 +97,7 @@ export const createAppointment = async (appointment: Omit<Appointment, 'id' | 'c
     throw error;
   }
   
-  return data;
+  return data as Appointment;
 };
 
 export const updateAppointmentStatus = async (id: string, status: Appointment['status']): Promise<Appointment> => {
@@ -113,10 +113,10 @@ export const updateAppointmentStatus = async (id: string, status: Appointment['s
     throw error;
   }
   
-  return data;
+  return data as Appointment;
 };
 
-export const getAppointmentsForDate = async (doctorId: string, date: string): Promise<Appointment[]> => {
+export const getAppointmentsForDate = async (doctorId: string, date: string) => {
   const { data, error } = await supabase
     .from('appointments')
     .select('*')

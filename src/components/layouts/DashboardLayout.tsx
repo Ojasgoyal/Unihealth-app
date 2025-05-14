@@ -9,11 +9,16 @@ type DashboardLayoutProps = {
 };
 
 export const DashboardLayout = ({ children, userRole }: DashboardLayoutProps) => {
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar userRole={userRole} />
+      <Sidebar 
+        open={sidebarOpen} 
+        setOpen={setSidebarOpen}
+      />
       <div className="flex flex-col flex-1">
-        <Header userRole={userRole} />
+        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <main className="flex-1 p-4 md:p-6 overflow-auto">{children}</main>
       </div>
     </div>

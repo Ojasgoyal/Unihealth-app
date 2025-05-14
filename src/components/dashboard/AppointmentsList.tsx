@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAllAppointments } from "@/services/appointmentsService";
-import { format } from "date-fns";
 
 export const AppointmentsList = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -59,7 +58,7 @@ export const AppointmentsList = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p>{appointment.start_time.slice(0, 5)}</p>
+                  <p>{appointment.start_time ? appointment.start_time.slice(0, 5) : 'N/A'}</p>
                   <span 
                     className={`text-xs px-2 py-1 rounded-full ${
                       appointment.status === "confirmed" 
@@ -69,7 +68,7 @@ export const AppointmentsList = () => {
                           : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                    {appointment.status ? appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1) : 'Unknown'}
                   </span>
                 </div>
               </div>
