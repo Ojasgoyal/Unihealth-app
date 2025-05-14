@@ -27,11 +27,24 @@ export async function signUp(
         first_name,
         last_name,
         phone
-      }
+      },
+      emailRedirectTo: window.location.origin + '/login',
     }
   });
   
   if (error) throw error;
+  
+  // After signup, automatically sign in the user
+  if (data.user) {
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (signInError) throw signInError;
+    
+    return signInData;
+  }
   
   return data;
 }

@@ -52,7 +52,7 @@ const Register = () => {
     setLoading(true);
     
     try {
-      await signUp(
+      const result = await signUp(
         formData.email,
         formData.password,
         formData.firstName,
@@ -60,12 +60,19 @@ const Register = () => {
         formData.phone
       );
       
-      toast({
-        title: "Registration successful",
-        description: "Welcome to Unihealth! Please check your email for verification.",
-      });
-      
-      // Note: We don't need to navigate manually since Auth context will handle this
+      if (result.session) {
+        toast({
+          title: "Registration successful",
+          description: "Welcome to Unihealth! You are now signed in.",
+        });
+        navigate("/patient-dashboard");
+      } else {
+        toast({
+          title: "Registration successful",
+          description: "Please sign in with your credentials.",
+        });
+        navigate("/login");
+      }
     } catch (error: any) {
       toast({
         title: "Registration failed",
