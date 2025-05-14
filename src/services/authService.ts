@@ -19,6 +19,7 @@ export async function signUp(
   last_name: string, 
   phone?: string
 ) {
+  // First, just try to sign up without auto-login
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -27,23 +28,32 @@ export async function signUp(
         first_name,
         last_name,
         phone
-      },
-      emailRedirectTo: window.location.origin + '/login',
+      }
     }
   });
   
   if (error) throw error;
   
-  // After signup, automatically sign in the user
+  // After successful signup, try to sign in the user
   if (data.user) {
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (signInError) throw signInError;
-    
-    return signInData;
+    try {
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (signInError) {
+        // If sign-in fails, just return the signup data
+        console.log("Auto sign-in failed:", signInError.message);
+        return data;
+      }
+      
+      return signInData;
+    } catch (signInErr) {
+      // If there's an error in the sign-in process, just return the signup data
+      console.log("Error during auto sign-in:", signInErr);
+      return data;
+    }
   }
   
   return data;

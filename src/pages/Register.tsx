@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -49,6 +48,15 @@ const Register = () => {
       return;
     }
     
+    if (formData.password.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 8 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -67,16 +75,26 @@ const Register = () => {
         });
         navigate("/patient-dashboard");
       } else {
+        // Even if auto-login failed, the account was created
         toast({
-          title: "Registration successful",
+          title: "Account created successfully",
           description: "Please sign in with your credentials.",
         });
         navigate("/login");
       }
     } catch (error: any) {
+      let errorMessage = error.message || "An error occurred during registration.";
+      
+      // Handle common Supabase error messages with more user-friendly messages
+      if (errorMessage.includes("already registered")) {
+        errorMessage = "This email is already registered. Please use another email or sign in.";
+      } else if (errorMessage.includes("password")) {
+        errorMessage = "Password error: Please use a stronger password with at least 8 characters.";
+      }
+      
       toast({
         title: "Registration failed",
-        description: error.message || "An error occurred during registration. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
