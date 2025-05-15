@@ -25,7 +25,7 @@ const Index = () => {
         <div className="healthcare-container py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Hospital className="h-8 w-8 text-healthcare-primary" />
-            <h1 className="text-2xl font-bold text-gray-900">MediConnect</h1>
+            <h1 className="text-2xl font-bold text-gray-900">UniHealth</h1>
           </div>
           <div className="flex space-x-2">
             <Button 
@@ -49,8 +49,8 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div className="space-y-6 animate-fade-in">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
-                Healthcare Management
-                <span className="block text-healthcare-primary">Made Simple</span>
+                Integrated Healthcare
+                <span className="block text-healthcare-primary">Platform</span>
               </h1>
               <p className="text-lg text-gray-600">
                 Connect patients with quality healthcare services through our unified platform. 
@@ -245,7 +245,7 @@ const Index = () => {
             <div>
               <div className="flex items-center space-x-2">
                 <Hospital className="h-6 w-6 text-healthcare-primary" />
-                <span className="text-xl font-bold">MediConnect</span>
+                <span className="text-xl font-bold">UniHealth</span>
               </div>
               <p className="mt-4 text-gray-400">
                 Connecting patients with quality healthcare services through a unified platform.
@@ -268,7 +268,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-6 text-center text-gray-500">
-            <p>&copy; 2025 MediConnect Healthcare Management. All rights reserved.</p>
+            <p>&copy; 2025 UniHealth Inc. All rights reserved.</p>
           </div>
         </div>
       </footer>
