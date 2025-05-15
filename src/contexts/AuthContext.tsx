@@ -23,9 +23,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   async function fetchProfile(userId: string) {
-    const profileData = await getUserProfile(userId);
-    setProfile(profileData);
-    setIsAdmin(profileData?.role === 'admin');
+    try {
+      const profileData = await getUserProfile(userId);
+      setProfile(profileData);
+      setIsAdmin(profileData?.role === 'admin');
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
   }
 
   async function refreshProfile() {

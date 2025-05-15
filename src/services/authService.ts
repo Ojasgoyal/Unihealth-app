@@ -42,14 +42,12 @@ export async function signUp(
       });
       
       if (signInError) {
-        // If sign-in fails, just return the signup data
         console.log("Auto sign-in failed:", signInError.message);
         return data;
       }
       
       return signInData;
     } catch (signInErr) {
-      // If there's an error in the sign-in process, just return the signup data
       console.log("Error during auto sign-in:", signInErr);
       return data;
     }

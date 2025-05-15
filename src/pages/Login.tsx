@@ -9,32 +9,44 @@ import { useToast } from "@/components/ui/use-toast";
 import { Hospital, UserRound } from "lucide-react";
 import { signIn } from "@/services/authService";
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useForm } from "react-hook-form";
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    defaultValues: {
+      email: "",
+      password: "",
+    }
+  });
 
   // Redirect if user is already logged in
   if (user) {
     return <Navigate to="/patient-dashboard" replace />;
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (formData: LoginFormData) => {
+    setError(null);
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn(formData.email, formData.password);
       toast({
         title: "Login successful",
         description: "Welcome back to Unihealth",
       });
-      // No need to navigate - AuthContext will handle redirects
+      // AuthContext will handle redirects
     } catch (error: any) {
       let errorMessage = error.message || "Please check your credentials and try again";
       
@@ -43,6 +55,7 @@ const Login = () => {
         errorMessage = "Invalid email or password. Please try again.";
       }
       
+      setError(errorMessage);
       toast({
         title: "Login failed",
         description: errorMessage,
@@ -72,19 +85,33 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input 
                   id="email" 
                   type="email" 
                   placeholder="your.email@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Please enter a valid email address"
+                    }
+                  })}
                 />
+                {errors.email && (
+                  <p className="text-sm text-red-500">{errors.email.message}</p>
+                )}
               </div>
+              
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
@@ -94,13 +121,17 @@ const Login = () => {
                 </div>
                 <Input 
                   id="password" 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  type="password"
+                  {...register("password", { 
+                    required: "Password is required" 
+                  })}
                 />
+                {errors.password && (
+                  <p className="text-sm text-red-500">{errors.password.message}</p>
+                )}
               </div>
             </CardContent>
+            
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Signing in..." : "Sign in"}
