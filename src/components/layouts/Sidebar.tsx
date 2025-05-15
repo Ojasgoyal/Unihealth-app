@@ -7,9 +7,11 @@ import {
   LayoutDashboard,
   ListChecks,
   User,
+  ChevronLeft,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   className?: string;
@@ -25,9 +27,10 @@ export function Sidebar({
   const pathname = useLocation().pathname;
   const { user, isAdmin } = useAuth();
 
+  // Combine routes - for showcase purposes, we'll show both admin and patient routes
   const patientRoutes = [
     {
-      title: "Dashboard",
+      title: "Patient Dashboard",
       href: "/patient-dashboard",
       icon: <Home className="h-4 w-4" />,
       active: pathname === "/patient-dashboard",
@@ -48,31 +51,37 @@ export function Sidebar({
 
   const adminRoutes = [
     {
-      title: "Dashboard",
+      title: "Admin Dashboard",
       href: "/admin-dashboard",
-      icon: <Home className="h-4 w-4" />,
+      icon: <LayoutDashboard className="h-4 w-4" />,
       active: pathname === "/admin-dashboard",
     },
     {
-      title: "Doctors",
+      title: "Doctors Management",
       href: "/admin/doctors",
       icon: <Users className="h-4 w-4" />,
       active: pathname === "/admin/doctors",
     },
   ];
 
-  const routes = isAdmin ? adminRoutes : patientRoutes;
+  // For showcase purposes - show both route sets
+  const routes = [...patientRoutes, ...adminRoutes];
 
   return (
     <aside
-      className={`fixed left-0 top-14 z-20 h-[calc(100vh-3.5rem)] w-72 flex-col overflow-y-auto border-r border-r-border bg-background pt-5 pb-4 transition-transform duration-300 ease-in-out dark:border-r-muted ${
+      className={`fixed left-0 top-0 z-20 h-screen w-64 flex-col bg-background pt-14 pb-4 border-r border-r-border transition-transform duration-300 ease-in-out ${
         open ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0 ${className}`}
     >
-      <div className="flex flex-col space-y-1">
-        <div className="flex-1 space-y-2 p-6">
+      <div className="flex flex-col h-full">
+        <div className="flex justify-end pr-2 mb-2 md:hidden">
+          <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1 space-y-2 p-4">
           <h2 className="pb-2 text-lg font-semibold tracking-tight">
-            {isAdmin ? "Admin" : "Patient"}
+            Navigation
           </h2>
           <div className="space-y-1">
             {routes.map((route) => (
@@ -86,6 +95,11 @@ export function Sidebar({
                       : "text-muted-foreground"
                   }`
                 }
+                onClick={() => {
+                  if (window.innerWidth < 768) {
+                    setOpen(false);
+                  }
+                }}
               >
                 {route.icon}
                 <span>{route.title}</span>

@@ -13,9 +13,13 @@ export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
   
+  // For showcase purposes - allow all authenticated users to access admin pages
+  // IMPORTANT: Remove this for production and uncomment the below code
+  /*
   if (!isAdmin) {
     return <Navigate to="/patient-dashboard" replace />;
   }
+  */
   
   return <>{children}</>;
 };
