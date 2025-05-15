@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Hospital, UserRound } from "lucide-react";
 import { signIn } from "@/services/authService";
@@ -35,10 +34,18 @@ const Login = () => {
         title: "Login successful",
         description: "Welcome back to Unihealth",
       });
+      // No need to navigate - AuthContext will handle redirects
     } catch (error: any) {
+      let errorMessage = error.message || "Please check your credentials and try again";
+      
+      // Handle common Supabase error messages with more user-friendly messages
+      if (errorMessage.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password. Please try again.";
+      }
+      
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

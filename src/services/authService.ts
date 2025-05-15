@@ -19,7 +19,6 @@ export async function signUp(
   last_name: string, 
   phone?: string
 ) {
-  // First, just try to sign up without auto-login
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
