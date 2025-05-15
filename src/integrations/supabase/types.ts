@@ -9,56 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      appointments: {
-        Row: {
-          appointment_date: string
-          created_at: string
-          doctor_id: string
-          end_time: string
-          id: string
-          notes: string | null
-          patient_id: string
-          reason: string | null
-          start_time: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          appointment_date: string
-          created_at?: string
-          doctor_id: string
-          end_time: string
-          id?: string
-          notes?: string | null
-          patient_id: string
-          reason?: string | null
-          start_time: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          appointment_date?: string
-          created_at?: string
-          doctor_id?: string
-          end_time?: string
-          id?: string
-          notes?: string | null
-          patient_id?: string
-          reason?: string | null
-          start_time?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "appointments_doctor_id_fkey"
-            columns: ["doctor_id"]
-            isOneToOne: false
-            referencedRelation: "doctors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       doctors: {
         Row: {
           available: boolean
@@ -92,36 +42,6 @@ export type Database = {
           schedule?: string
           specialization?: string
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          first_name: string
-          id: string
-          last_name: string
-          phone: string | null
-          role: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          first_name: string
-          id: string
-          last_name: string
-          phone?: string | null
-          role?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          first_name?: string
-          id?: string
-          last_name?: string
-          phone?: string | null
-          role?: string
-          updated_at?: string
         }
         Relationships: []
       }

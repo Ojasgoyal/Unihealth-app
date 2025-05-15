@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,98 +8,55 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast";
 import { Hospital, UserRound } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { signUp } from "@/services/authService";
-import { useAuth } from "@/contexts/AuthContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useForm } from "react-hook-form";
-
-// Define the form data type
-interface RegisterFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  password: string;
-  confirmPassword: string;
-}
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormData>({
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      password: "",
-      confirmPassword: "",
-    }
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
   });
 
-  // Redirect if user is already logged in
-  if (user) {
-    return <Navigate to="/patient-dashboard" replace />;
-  }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const onSubmit = async (formData: RegisterFormData) => {
-    // Reset error state
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match. Please ensure both passwords are the same.");
-      return;
-    }
-    
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+      toast({
+        title: "Passwords don't match",
+        description: "Please ensure both passwords are the same",
+        variant: "destructive",
+      });
       return;
     }
     
     setLoading(true);
     
     try {
-      const result = await signUp(
-        formData.email,
-        formData.password,
-        formData.firstName,
-        formData.lastName,
-        formData.phone
-      );
-      
-      if (result.session) {
+      // This is where we would register with Supabase
+      // For now, we'll simulate registration with a timeout
+      setTimeout(() => {
+        navigate("/patient-dashboard");
         toast({
           title: "Registration successful",
-          description: "Welcome to Unihealth! You are now signed in.",
+          description: "Welcome to MediConnect!",
         });
-        navigate("/patient-dashboard");
-      } else {
-        // Even if auto-login failed, the account was created
-        toast({
-          title: "Account created successfully",
-          description: "Please sign in with your credentials.",
-        });
-        navigate("/login");
-      }
-    } catch (error: any) {
-      let errorMessage = error.message || "An error occurred during registration.";
-      
-      // Handle common Supabase error messages with more user-friendly messages
-      if (errorMessage.includes("already registered")) {
-        errorMessage = "This email is already registered. Please use another email or sign in.";
-      } else if (errorMessage.includes("password")) {
-        errorMessage = "Password error: Please use a stronger password with at least 8 characters.";
-      }
-      
-      setError(errorMessage);
+      }, 1000);
+    } catch (error) {
       toast({
         title: "Registration failed",
-        description: errorMessage,
+        description: "An error occurred during registration. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -114,7 +71,7 @@ const Register = () => {
           <div className="flex justify-center">
             <Hospital className="h-12 w-12 text-healthcare-primary" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Unihealth</h2>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">MediConnect</h2>
           <p className="mt-2 text-sm text-gray-600">Create your patient account</p>
         </div>
         
@@ -129,36 +86,28 @@ const Register = () => {
             </CardDescription>
           </CardHeader>
           
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input 
                     id="firstName" 
-                    {...register("firstName", { required: true })}
-                    aria-invalid={errors.firstName ? "true" : "false"}
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required 
                   />
-                  {errors.firstName && (
-                    <p className="text-sm text-red-500">First name is required</p>
-                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input 
                     id="lastName" 
-                    {...register("lastName", { required: true })}
-                    aria-invalid={errors.lastName ? "true" : "false"}
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required 
                   />
-                  {errors.lastName && (
-                    <p className="text-sm text-red-500">Last name is required</p>
-                  )}
                 </div>
               </div>
               
@@ -166,31 +115,24 @@ const Register = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input 
                   id="email" 
-                  type="email"
-                  {...register("email", { 
-                    required: true,
-                    pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
-                  })}
-                  aria-invalid={errors.email ? "true" : "false"}
+                  name="email"
+                  type="email" 
+                  value={formData.email}
+                  onChange={handleChange}
+                  required 
                 />
-                {errors.email && (
-                  <p className="text-sm text-red-500">
-                    {errors.email.type === "required" ? "Email is required" : "Valid email is required"}
-                  </p>
-                )}
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input 
                   id="phone" 
-                  type="tel"
-                  {...register("phone", { required: true })}
-                  aria-invalid={errors.phone ? "true" : "false"}
+                  name="phone"
+                  type="tel" 
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required 
                 />
-                {errors.phone && (
-                  <p className="text-sm text-red-500">Phone number is required</p>
-                )}
               </div>
               
               <Separator />
@@ -199,21 +141,12 @@ const Register = () => {
                 <Label htmlFor="password">Password</Label>
                 <Input 
                   id="password" 
-                  type="password"
-                  {...register("password", { 
-                    required: true,
-                    minLength: 8
-                  })}
-                  aria-invalid={errors.password ? "true" : "false"}
+                  name="password"
+                  type="password" 
+                  value={formData.password}
+                  onChange={handleChange}
+                  required 
                 />
-                {errors.password && (
-                  <p className="text-sm text-red-500">
-                    {errors.password.type === "required" 
-                      ? "Password is required" 
-                      : "Password must be at least 8 characters"
-                    }
-                  </p>
-                )}
                 <p className="text-xs text-gray-500">
                   Password must be at least 8 characters long
                 </p>
@@ -223,21 +156,12 @@ const Register = () => {
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input 
                   id="confirmPassword" 
-                  type="password"
-                  {...register("confirmPassword", { 
-                    required: true,
-                    validate: value => value === watch("password") || "Passwords do not match"
-                  })}
-                  aria-invalid={errors.confirmPassword ? "true" : "false"}
+                  name="confirmPassword"
+                  type="password" 
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required 
                 />
-                {errors.confirmPassword && (
-                  <p className="text-sm text-red-500">
-                    {errors.confirmPassword.type === "required" 
-                      ? "Please confirm your password" 
-                      : "Passwords do not match"
-                    }
-                  </p>
-                )}
               </div>
             </CardContent>
             

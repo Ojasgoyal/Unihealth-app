@@ -1,34 +1,47 @@
 
-import { useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAllAppointments } from "@/services/appointmentsService";
+
+// Mock data for appointments
+const recentAppointments = [
+  {
+    patientName: "Sarah Johnson",
+    doctorName: "Dr. Michael Stevens",
+    specialty: "Cardiology",
+    time: "09:30 AM",
+    status: "Confirmed"
+  },
+  {
+    patientName: "Robert Williams",
+    doctorName: "Dr. Emily Chen",
+    specialty: "Pediatrics",
+    time: "10:15 AM",
+    status: "Pending"
+  },
+  {
+    patientName: "Jennifer Davis",
+    doctorName: "Dr. James Wilson",
+    specialty: "Orthopedics",
+    time: "11:00 AM",
+    status: "Confirmed"
+  },
+  {
+    patientName: "David Brown",
+    doctorName: "Dr. Lisa Thompson",
+    specialty: "Neurology",
+    time: "01:45 PM",
+    status: "Confirmed"
+  },
+  {
+    patientName: "Michael Garcia",
+    doctorName: "Dr. Robert Miller",
+    specialty: "Dermatology",
+    time: "03:30 PM",
+    status: "Pending"
+  }
+];
 
 export const AppointmentsList = () => {
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const data = await getAllAppointments();
-        // Get today's appointments only
-        const today = new Date().toISOString().split('T')[0];
-        const todaysAppointments = data.filter(
-          app => app.appointment_date === today
-        ).slice(0, 5); // Limit to 5 appointments
-        
-        setAppointments(todaysAppointments);
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
-  }, []);
-
   return (
     <Card className="card-hover">
       <CardHeader>
@@ -41,44 +54,32 @@ export const AppointmentsList = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="py-4 text-center">
-            <p className="text-muted-foreground">Loading appointments...</p>
-          </div>
-        ) : appointments.length > 0 ? (
-          <div className="space-y-6">
-            {appointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-start justify-between">
-                <div>
-                  <p className="font-medium">
-                    {appointment.patient?.first_name} {appointment.patient?.last_name}
-                  </p>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span>{appointment.doctor?.name}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p>{appointment.start_time ? appointment.start_time.slice(0, 5) : 'N/A'}</p>
-                  <span 
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      appointment.status === "confirmed" 
-                        ? "bg-green-100 text-green-800" 
-                        : appointment.status === "pending"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {appointment.status ? appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1) : 'Unknown'}
-                  </span>
+        <div className="space-y-6">
+          {recentAppointments.map((appointment, index) => (
+            <div key={index} className="flex items-start justify-between">
+              <div>
+                <p className="font-medium">{appointment.patientName}</p>
+                <div className="flex items-center text-sm text-gray-500">
+                  <span>{appointment.doctorName}</span>
+                  <span className="mx-1">•</span>
+                  <span>{appointment.specialty}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-4 text-center">
-            <p className="text-muted-foreground">No appointments scheduled for today</p>
-          </div>
-        )}
+              <div className="text-right">
+                <p>{appointment.time}</p>
+                <span 
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    appointment.status === "Confirmed" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {appointment.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
