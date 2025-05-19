@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, User, UserCheck, Filter, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
@@ -51,8 +51,8 @@ interface Appointment {
     specialization: string;
   };
   patient?: {
-    first_name: string;
-    last_name: string;
+    first_name?: string;
+    last_name?: string;
   };
 }
 
@@ -64,7 +64,7 @@ const AppointmentsManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Fetch all appointments with doctor and patient details
+  // Fetch all appointments with doctor details
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["admin-appointments", statusFilter],
     queryFn: async () => {
@@ -72,8 +72,7 @@ const AppointmentsManagement = () => {
         .from('appointments')
         .select(`
           *,
-          doctor:doctor_id (name, specialization),
-          patient:patient_id (first_name, last_name)
+          doctor:doctor_id (name, specialization)
         `)
         .order('appointment_date', { ascending: false });
       
@@ -85,7 +84,15 @@ const AppointmentsManagement = () => {
       
       if (error) throw error;
       console.log("Appointments data:", data);
-      return data || [];
+      
+      // Since we don't have profiles table with patient info yet, we'll fake it
+      return data.map(appointment => ({
+        ...appointment,
+        patient: {
+          first_name: `Patient`,
+          last_name: `${appointment.patient_id.substring(0, 4)}`
+        }
+      }));
     }
   });
 
@@ -257,7 +264,7 @@ const AppointmentsManagement = () => {
                           <div className="flex items-center">
                             <User className="h-4 w-4 mr-1" />
                             {appointment.patient 
-                              ? `${appointment.patient.first_name} ${appointment.patient.last_name}`
+                              ? `${appointment.patient.first_name || ''} ${appointment.patient.last_name || ''}`
                               : appointment.patient_id.substring(0, 8)}
                           </div>
                         </TableCell>

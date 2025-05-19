@@ -1,97 +1,122 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getDoctors } from "@/services/doctorsService";
+import { useState, useEffect } from "react";
+import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { DashboardLayout } from "@/components/layouts/DashboardLayout";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CalendarIcon, MapPin, Search } from "lucide-react";
+import { Stethoscope, Map, Calendar, Search, UserX } from "lucide-react";
+
+interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+  email: string;
+  phone: string;
+  schedule: string;
+  available: boolean;
+}
 
 const FindDoctor = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [tempSearchQuery, setTempSearchQuery] = useState("");
-  const [specializationFilter, setSpecializationFilter] = useState("all");
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [availability, setAvailability] = useState("");
 
-  const { data: doctors = [], isLoading, error } = useQuery({
+  // Fetch all doctors
+  const { data: allDoctors = [], isLoading, error } = useQuery({
     queryKey: ["doctors"],
-    queryFn: () => getDoctors(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('doctors')
+        .select('*');
+      
+      if (error) throw error;
+      return data || [];
+    }
   });
-
-  // Filter doctors based on search and specialization
-  const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = searchQuery === "" || doctor.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialization = specializationFilter === "all" || doctor.specialization === specializationFilter;
-    return matchesSearch && matchesSpecialization;
-  });
-
-  // Gets unique specializations from all doctors
-  const specializations = ["all", ...Array.from(new Set(doctors.map(doctor => doctor.specialization)))];
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTempSearchQuery(e.target.value);
-  };
 
   const handleSearch = () => {
-    setSearchQuery(tempSearchQuery);
+    setSearchQuery(searchTerm);
   };
 
-  const handleSpecializationChange = (value: string) => {
-    setSpecializationFilter(value);
-  };
+  // Filter doctors based on search term, specialization, and availability
+  const filteredDoctors = allDoctors.filter(doctor => {
+    const matchesSearch = searchQuery === "" || 
+      doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesSpecialization = specialization === "" || 
+      doctor.specialization.toLowerCase() === specialization.toLowerCase();
+    
+    const matchesAvailability = availability === "" || 
+      (availability === "available" && doctor.available) ||
+      (availability === "unavailable" && !doctor.available);
+    
+    return matchesSearch && matchesSpecialization && matchesAvailability;
+  });
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
+  // Get unique specializations for the filter dropdown
+  const specializations = [...new Set(allDoctors.map(doctor => doctor.specialization))];
 
-  if (error) return <div>Error: {(error as Error).message}</div>;
+  if (error) {
+    toast({
+      title: "Error loading doctors",
+      description: "There was a problem loading the doctor list.",
+      variant: "destructive",
+    });
+  }
 
   return (
     <DashboardLayout userRole="patient">
-      <div className="container mx-auto py-8">
-        <h1 className="text-2xl font-bold tracking-tight mb-4">Find a Doctor</h1>
-        <p className="text-muted-foreground mb-6">Search for specialists that match your needs</p>
-        
-        <div className="mb-8 flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex-1 flex items-center space-x-2">
-            <Input
-              type="text"
-              placeholder="Search doctors by name..."
-              value={tempSearchQuery}
-              onChange={handleSearchChange}
-              onKeyPress={handleKeyPress}
-              className="max-w-md"
-            />
-            <Button onClick={handleSearch} className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Search
-            </Button>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Find a Doctor</h1>
+          <p className="text-muted-foreground">
+            Search for healthcare providers by name, specialization, or availability
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search by name or specialization..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleSearch} className="shrink-0">
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+            </div>
           </div>
-          <Select value={specializationFilter} onValueChange={handleSpecializationChange}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Filter by Specialization" />
+          
+          <Select value={specialization} onValueChange={setSpecialization}>
+            <SelectTrigger>
+              <SelectValue placeholder="Specialization" />
             </SelectTrigger>
             <SelectContent>
-              {specializations.map((specialization) => (
-                <SelectItem key={specialization} value={specialization}>
-                  {specialization === "all" ? "All Specializations" : specialization}
-                </SelectItem>
+              <SelectItem value="">All Specializations</SelectItem>
+              {specializations.map((spec) => (
+                <SelectItem key={spec} value={spec}>{spec}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={availability} onValueChange={setAvailability}>
+            <SelectTrigger>
+              <SelectValue placeholder="Availability" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="unavailable">Unavailable</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -101,78 +126,56 @@ const FindDoctor = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-healthcare-primary"></div>
           </div>
         ) : filteredDoctors.length > 0 ? (
-          <ScrollArea className="h-[600px] w-full rounded-md border">
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
-              {filteredDoctors.map((doctor) => (
-                <DoctorCard key={doctor.id} doctor={doctor} />
-              ))}
-            </div>
-          </ScrollArea>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredDoctors.map((doctor) => (
+              <Card key={doctor.id} className="overflow-hidden">
+                <CardHeader className="bg-primary/5 pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-xl">{doctor.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <Stethoscope className="inline h-4 w-4 mr-1" />
+                        {doctor.specialization}
+                      </p>
+                    </div>
+                    <div className={`px-2 py-1 rounded-full text-xs ${
+                      doctor.available 
+                        ? "bg-green-100 text-green-800" 
+                        : "bg-amber-100 text-amber-800"
+                    }`}>
+                      {doctor.available ? "Available" : "Unavailable"}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    <p className="text-sm">
+                      <Map className="inline h-4 w-4 mr-1" /> 
+                      Contact: {doctor.phone}
+                    </p>
+                    <p className="text-sm">
+                      <Calendar className="inline h-4 w-4 mr-1" /> 
+                      Schedule: {doctor.schedule}
+                    </p>
+                    <Button className="w-full mt-4" variant="outline">
+                      Book Appointment
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : (
           <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <Search className="h-12 w-12 mx-auto text-gray-400" />
+            <UserX className="h-12 w-12 mx-auto text-gray-400" />
             <h3 className="mt-4 text-lg font-medium">No doctors found</h3>
             <p className="mt-1 text-gray-500">
-              Try adjusting your search or filter to find available doctors.
+              Try adjusting your search or filter criteria
             </p>
           </div>
         )}
       </div>
     </DashboardLayout>
-  );
-};
-
-const DoctorCard = ({ doctor }) => {
-  return (
-    <Card className="bg-white shadow-md rounded-lg overflow-hidden">
-      <CardHeader>
-        <div className="flex items-center">
-          <Avatar className="mr-4">
-            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.name}`} alt={doctor.name} />
-            <AvatarFallback>{doctor.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <CardTitle>{doctor.name}</CardTitle>
-            <CardDescription>{doctor.specialization}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <div className="flex items-center text-gray-500 mb-2">
-          <MapPin className="h-4 w-4 mr-1" />
-          <span>Central Hospital</span>
-        </div>
-        <div className="flex items-center text-gray-500 mb-2">
-          <CalendarIcon className="h-4 w-4 mr-1" />
-          <span>Available: {doctor.available ? "Yes" : "No"}</span>
-        </div>
-        <BookAppointmentButton doctor={doctor} />
-      </CardContent>
-    </Card>
-  );
-};
-
-const BookAppointmentButton = ({ doctor }) => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const handleBookAppointment = () => {
-    navigate(`/patient/appointments/new?doctor=${doctor.id}`);
-    toast({
-      title: "Doctor selected",
-      description: `You've selected ${doctor.name} for an appointment.`,
-      duration: 3000,
-    });
-  };
-
-  return (
-    <Button 
-      onClick={handleBookAppointment} 
-      className="w-full"
-      disabled={!doctor.available}
-    >
-      {doctor.available ? "Book Appointment" : "Currently Unavailable"}
-    </Button>
   );
 };
 

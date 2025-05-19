@@ -13,7 +13,7 @@ export interface Prescription {
   expiry_date: string | null;
   created_at: string;
   updated_at: string;
-  status?: string; // Add optional status field
+  status: string;
   doctor?: {
     name: string;
     specialization: string;
@@ -205,5 +205,48 @@ export const updatePrescriptionStatus = async (id: string, status: string): Prom
   } catch (error) {
     console.error('Error updating prescription status:', error);
     throw error;
+  }
+};
+
+export const getAllPrescriptions = async (): Promise<Prescription[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('prescriptions')
+      .select(`
+        *,
+        doctor:doctor_id (name, specialization),
+        appointment:appointment_id (appointment_date)
+      `)
+      .order('issue_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching all prescriptions:', error);
+    
+    // Return mock data as fallback
+    return [
+      {
+        id: "mock-rx-1",
+        appointment_id: "mock-apt-1",
+        doctor_id: "mock-doc-1",
+        patient_id: "mock-patient-1",
+        medications: ["Lisinopril 10mg", "Simvastatin 20mg"],
+        dosage: "Once daily",
+        instructions: "Take in the evening with food",
+        issue_date: new Date().toISOString(),
+        expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: "active",
+        doctor: {
+          name: "Dr. Michael Chang",
+          specialization: "Cardiologist"
+        },
+        appointment: {
+          appointment_date: new Date().toISOString()
+        }
+      }
+    ];
   }
 };

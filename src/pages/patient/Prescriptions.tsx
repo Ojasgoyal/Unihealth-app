@@ -39,54 +39,6 @@ const Prescriptions = () => {
     enabled: !appointmentId,
   });
   
-  // Add mock recent prescriptions to ensure consistency with dashboard display
-  const recentPrescriptions: Prescription[] = [
-    {
-      id: "rx-1",
-      doctor_id: "mock-doctor-3",
-      patient_id: patientId,
-      appointment_id: "mock-appointment-3",
-      doctor: {
-        name: "Sarah Johnson",
-        specialization: "Cardiologist"
-      },
-      issue_date: "2025-04-30T10:00:00Z",
-      expiry_date: "2025-05-30T10:00:00Z",
-      medications: ["Atenolol 50mg", "Aspirin 81mg"],
-      instructions: "Take once daily with food",
-      dosage: "Once daily",
-      status: "Active",
-      created_at: "2025-04-30T10:00:00Z",
-      updated_at: "2025-04-30T10:00:00Z"
-    },
-    {
-      id: "rx-2",
-      doctor_id: "mock-doctor-4",
-      patient_id: patientId,
-      appointment_id: "mock-appointment-4",
-      doctor: {
-        name: "Robert Miller",
-        specialization: "General Physician"
-      },
-      issue_date: "2025-04-15T14:30:00Z",
-      expiry_date: "2025-04-25T14:30:00Z",
-      medications: ["Amoxicillin 500mg"],
-      instructions: "Take three times daily for 10 days",
-      dosage: "Three times daily",
-      status: "Completed",
-      created_at: "2025-04-15T14:30:00Z",
-      updated_at: "2025-04-15T14:30:00Z"
-    }
-  ];
-  
-  // Combine API results with mock data, ensuring no duplicates by ID
-  const allPrescriptions = [...prescriptions];
-  recentPrescriptions.forEach(mockPrescription => {
-    if (!allPrescriptions.some(p => p.id === mockPrescription.id)) {
-      allPrescriptions.push(mockPrescription);
-    }
-  });
-  
   // Dummy function for download - in a real app this would generate a PDF
   const handleDownload = () => {
     toast({
@@ -175,9 +127,9 @@ const Prescriptions = () => {
           <div className="flex justify-center items-center p-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-healthcare-primary"></div>
           </div>
-        ) : allPrescriptions.length > 0 ? (
+        ) : prescriptions.length > 0 ? (
           <div className="space-y-4">
-            {allPrescriptions.map((prescription) => (
+            {prescriptions.map((prescription) => (
               <Card key={prescription.id} className="card-hover">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row justify-between">
@@ -187,7 +139,7 @@ const Prescriptions = () => {
                         <h3 className="text-lg font-medium">Prescription</h3>
                         <span 
                           className={`ml-2 text-xs px-2 py-1 rounded-full ${
-                            prescription.status === "Active" 
+                            prescription.status === "active" 
                               ? "bg-green-100 text-green-800" 
                               : "bg-gray-100 text-gray-800"
                           }`}

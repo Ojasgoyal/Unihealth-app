@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {
@@ -20,7 +20,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -46,7 +45,12 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Prescription } from "@/services/prescriptionsService";
+import { 
+  Prescription, 
+  getAllPrescriptions, 
+  createPrescription,
+  updatePrescriptionStatus
+} from "@/services/prescriptionsService";
 
 // Create a schema for prescription form validation
 const prescriptionSchema = z.object({
@@ -65,6 +69,7 @@ type PrescriptionFormValues = z.infer<typeof prescriptionSchema>;
 
 const PrescriptionsManagement = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPrescription, setEditingPrescription] = useState<Prescription | null>(null);
@@ -72,16 +77,7 @@ const PrescriptionsManagement = () => {
   // Fetch all prescriptions
   const { data: prescriptions = [], isLoading, refetch } = useQuery({
     queryKey: ["admin-prescriptions"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('prescriptions')
-        .select('*, doctor:doctor_id(name, specialization), appointment:appointment_id(appointment_date)')
-        .order('issue_date', { ascending: false });
-      
-      if (error) throw error;
-      console.log("Prescriptions data:", data);
-      return data || [];
-    }
+    queryFn: getAllPrescriptions
   });
 
   // Fetch appointments for form
@@ -136,9 +132,12 @@ const PrescriptionsManagement = () => {
       const prescriptionData = {
         ...values,
         medications: values.medications.split(',').map(med => med.trim()),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        issue_date: new Date(values.issue_date).toISOString()
       };
+
+      if (values.expiry_date) {
+        prescriptionData.expiry_date = new Date(values.expiry_date).toISOString();
+      }
 
       let result;
       
@@ -157,14 +156,8 @@ const PrescriptionsManagement = () => {
           description: "The prescription has been updated successfully."
         });
       } else {
-        // Create new prescription
-        const { data, error } = await supabase
-          .from('prescriptions')
-          .insert([prescriptionData])
-          .select();
-        
-        if (error) throw error;
-        result = data;
+        // Create new prescription using our service
+        await createPrescription(prescriptionData);
         toast({
           title: "Prescription created",
           description: "The prescription has been created successfully."
@@ -172,7 +165,7 @@ const PrescriptionsManagement = () => {
       }
       
       setIsDialogOpen(false);
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["admin-prescriptions"] });
       
     } catch (error) {
       console.error("Error saving prescription:", error);
@@ -185,21 +178,16 @@ const PrescriptionsManagement = () => {
   };
 
   // Handle prescription status update
-  const updatePrescriptionStatus = async (id: string, status: string) => {
+  const handleStatusUpdate = async (id: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('prescriptions')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id);
-      
-      if (error) throw error;
+      await updatePrescriptionStatus(id, status);
       
       toast({
         title: "Status updated",
         description: `Prescription status updated to ${status}.`
       });
       
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["admin-prescriptions"] });
     } catch (error) {
       console.error("Error updating status:", error);
       toast({
@@ -220,7 +208,7 @@ const PrescriptionsManagement = () => {
       patient_id: prescription.patient_id,
       medications: Array.isArray(prescription.medications) 
         ? prescription.medications.join(", ") 
-        : prescription.medications,
+        : prescription.medications.toString(),
       dosage: prescription.dosage,
       instructions: prescription.instructions,
       issue_date: prescription.issue_date.split('T')[0],
@@ -314,7 +302,7 @@ const PrescriptionsManagement = () => {
                             {Array.isArray(prescription.medications) ? (
                               prescription.medications.map((med, i) => <li key={i}>{med}</li>)
                             ) : (
-                              <li>{prescription.medications}</li>
+                              <li>{String(prescription.medications)}</li>
                             )}
                           </ul>
                         </TableCell>
@@ -339,7 +327,7 @@ const PrescriptionsManagement = () => {
                             </Button>
                             <Select 
                               defaultValue={prescription.status} 
-                              onValueChange={(value) => updatePrescriptionStatus(prescription.id, value)}
+                              onValueChange={(value) => handleStatusUpdate(prescription.id, value)}
                             >
                               <SelectTrigger className="w-[120px]">
                                 <SelectValue placeholder="Change status" />

@@ -81,17 +81,18 @@ export const AdminDashboardStats = () => {
   const { data: prescriptionsCount, isLoading: loadingPrescriptions } = useQuery({
     queryKey: ["admin-stats-prescriptions"],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('prescriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-      
-      if (error) {
-        // If table doesn't exist yet, return mock data
-        if (error.code === '42P01') return 15;
-        throw error;
+      try {
+        const { count, error } = await supabase
+          .from('prescriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active');
+        
+        if (error) throw error;
+        return count || 0;
+      } catch (error) {
+        console.error('Error fetching prescriptions count:', error);
+        return 0;
       }
-      return count || 0;
     }
   });
 

@@ -95,6 +95,66 @@ export type Database = {
         }
         Relationships: []
       }
+      prescriptions: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          doctor_id: string
+          dosage: string
+          expiry_date: string | null
+          id: string
+          instructions: string
+          issue_date: string
+          medications: string[]
+          patient_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          doctor_id: string
+          dosage: string
+          expiry_date?: string | null
+          id?: string
+          instructions: string
+          issue_date: string
+          medications: string[]
+          patient_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          doctor_id?: string
+          dosage?: string
+          expiry_date?: string | null
+          id?: string
+          instructions?: string
+          issue_date?: string
+          medications?: string[]
+          patient_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
