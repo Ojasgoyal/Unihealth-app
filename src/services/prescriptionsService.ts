@@ -35,6 +35,9 @@ export interface CreatePrescriptionData {
   status?: string;
 }
 
+// Import mock data utilities
+import { generateMockPrescriptions } from "./prescriptionsMockData";
+
 export const createPrescription = async (data: CreatePrescriptionData): Promise<Prescription> => {
   try {
     const { data: prescription, error } = await supabase
@@ -50,17 +53,8 @@ export const createPrescription = async (data: CreatePrescriptionData): Promise<
     return prescription;
   } catch (error) {
     console.error('Error creating prescription:', error);
-    // Return a mock prescription as fallback
-    const mockPrescription: Prescription = {
-      id: "mock-id-" + Date.now(),
-      ...data,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      expiry_date: data.expiry_date || null,
-      status: data.status || "active"
-    };
-    
-    return mockPrescription;
+    // Generate a single mock prescription as fallback
+    return generateMockPrescriptions(1, data)[0];
   }
 };
 
@@ -87,55 +81,8 @@ export const getPatientPrescriptions = async (patientId: string): Promise<Prescr
     throw new Error("No prescriptions found");
   } catch (error) {
     console.error('Error fetching patient prescriptions:', error);
-    
     // Return mock prescriptions as fallback
-    const mockPrescriptions: Prescription[] = [
-      {
-        id: "mock-id-1",
-        appointment_id: "mock-appointment-1",
-        doctor_id: "mock-doctor-1",
-        patient_id: patientId,
-        medications: ["Amoxicillin 500mg", "Ibuprofen 400mg"],
-        dosage: "One tablet three times daily",
-        instructions: "Take after meals with plenty of water",
-        issue_date: new Date().toISOString(),
-        expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: "active", // Add status
-        doctor: {
-          name: "Dr. Sarah Johnson",
-          specialization: "General Practitioner"
-        },
-        appointment: {
-          appointment_date: new Date().toISOString()
-        }
-      },
-      // Additional mock prescription with Completed status
-      {
-        id: "rx-2",
-        appointment_id: "mock-appointment-2",
-        doctor_id: "mock-doctor-2",
-        patient_id: patientId,
-        medications: ["Amoxicillin 500mg"],
-        dosage: "Three times daily",
-        instructions: "Take three times daily for 10 days",
-        issue_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        expiry_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        updated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        status: "completed", // Add completed status
-        doctor: {
-          name: "Dr. Robert Miller",
-          specialization: "General Physician"
-        },
-        appointment: {
-          appointment_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      }
-    ];
-    
-    return mockPrescriptions;
+    return generateMockPrescriptions(2, { patient_id: patientId });
   }
 };
 
@@ -164,27 +111,7 @@ export const getPrescriptionByAppointment = async (appointmentId: string): Promi
     
     // Return mock prescription if this is our mock ID
     if (appointmentId === "mock-appointment-1") {
-      return {
-        id: "mock-id-1",
-        appointment_id: appointmentId,
-        doctor_id: "mock-doctor-1",
-        patient_id: "mock-patient-1",
-        medications: ["Amoxicillin 500mg", "Ibuprofen 400mg"],
-        dosage: "One tablet three times daily",
-        instructions: "Take after meals with plenty of water",
-        issue_date: new Date().toISOString(),
-        expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: "active", // Add status
-        doctor: {
-          name: "Dr. Sarah Johnson",
-          specialization: "General Practitioner"
-        },
-        appointment: {
-          appointment_date: new Date().toISOString()
-        }
-      };
+      return generateMockPrescriptions(1, { appointment_id: appointmentId })[0];
     }
     
     return null;
@@ -225,28 +152,6 @@ export const getAllPrescriptions = async (): Promise<Prescription[]> => {
     console.error('Error fetching all prescriptions:', error);
     
     // Return mock data as fallback
-    return [
-      {
-        id: "mock-rx-1",
-        appointment_id: "mock-apt-1",
-        doctor_id: "mock-doc-1",
-        patient_id: "mock-patient-1",
-        medications: ["Lisinopril 10mg", "Simvastatin 20mg"],
-        dosage: "Once daily",
-        instructions: "Take in the evening with food",
-        issue_date: new Date().toISOString(),
-        expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: "active",
-        doctor: {
-          name: "Dr. Michael Chang",
-          specialization: "Cardiologist"
-        },
-        appointment: {
-          appointment_date: new Date().toISOString()
-        }
-      }
-    ];
+    return generateMockPrescriptions(1);
   }
 };
