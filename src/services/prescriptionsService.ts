@@ -31,7 +31,7 @@ export interface CreatePrescriptionData {
   dosage: string;
   instructions: string;
   issue_date: string;
-  expiry_date?: string;
+  expiry_date?: string | null;
   status?: string;
 }
 
@@ -57,7 +57,7 @@ export const createPrescription = async (data: CreatePrescriptionData): Promise<
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       expiry_date: data.expiry_date || null,
-      status: "active" // Add default status
+      status: data.status || "active"
     };
     
     return mockPrescription;

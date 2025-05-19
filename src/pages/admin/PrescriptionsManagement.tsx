@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
@@ -49,7 +48,8 @@ import {
   Prescription, 
   getAllPrescriptions, 
   createPrescription,
-  updatePrescriptionStatus
+  updatePrescriptionStatus,
+  CreatePrescriptionData
 } from "@/services/prescriptionsService";
 
 // Create a schema for prescription form validation
@@ -129,10 +129,18 @@ const PrescriptionsManagement = () => {
   // Handle form submission
   const onSubmit = async (values: PrescriptionFormValues) => {
     try {
-      const prescriptionData = {
-        ...values,
-        medications: values.medications.split(',').map(med => med.trim()),
-        issue_date: new Date(values.issue_date).toISOString()
+      // Convert comma-separated medications string to array
+      const medicationsArray = values.medications.split(',').map(med => med.trim());
+      
+      const prescriptionData: CreatePrescriptionData = {
+        appointment_id: values.appointment_id,
+        doctor_id: values.doctor_id,
+        patient_id: values.patient_id,
+        medications: medicationsArray,
+        dosage: values.dosage,
+        instructions: values.instructions,
+        issue_date: new Date(values.issue_date).toISOString(),
+        status: values.status
       };
 
       if (values.expiry_date) {
