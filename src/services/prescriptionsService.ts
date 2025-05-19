@@ -13,6 +13,7 @@ export interface Prescription {
   expiry_date: string | null;
   created_at: string;
   updated_at: string;
+  status?: string; // Add optional status field
   doctor?: {
     name: string;
     specialization: string;
@@ -43,7 +44,8 @@ export const createPrescription = async (data: CreatePrescriptionData): Promise<
     ...data,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    expiry_date: data.expiry_date || null
+    expiry_date: data.expiry_date || null,
+    status: "Active" // Add default status
   };
   
   return mockPrescription;
@@ -67,12 +69,35 @@ export const getPatientPrescriptions = async (patientId: string): Promise<Prescr
       expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      status: "Active", // Add status
       doctor: {
         name: "Dr. Sarah Johnson",
         specialization: "General Practitioner"
       },
       appointment: {
         appointment_date: new Date().toISOString()
+      }
+    },
+    // Additional mock prescription with Completed status
+    {
+      id: "rx-2",
+      appointment_id: "mock-appointment-2",
+      doctor_id: "mock-doctor-2",
+      patient_id: patientId,
+      medications: ["Amoxicillin 500mg"],
+      dosage: "Three times daily",
+      instructions: "Take three times daily for 10 days",
+      issue_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      expiry_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      updated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      status: "Completed", // Add completed status
+      doctor: {
+        name: "Dr. Robert Miller",
+        specialization: "General Physician"
+      },
+      appointment: {
+        appointment_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
       }
     }
   ];
@@ -98,6 +123,7 @@ export const getPrescriptionByAppointment = async (appointmentId: string): Promi
       expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      status: "Active", // Add status
       doctor: {
         name: "Dr. Sarah Johnson",
         specialization: "General Practitioner"

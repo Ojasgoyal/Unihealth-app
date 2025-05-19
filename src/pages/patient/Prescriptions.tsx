@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { FileText, Calendar, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getPatientPrescriptions, getPrescriptionByAppointment } from "@/services/prescriptionsService";
+import { Prescription, getPatientPrescriptions, getPrescriptionByAppointment } from "@/services/prescriptionsService";
 import { format, parseISO } from "date-fns";
 
 const Prescriptions = () => {
@@ -40,9 +40,12 @@ const Prescriptions = () => {
   });
   
   // Add mock recent prescriptions to ensure consistency with dashboard display
-  const recentPrescriptions = [
+  const recentPrescriptions: Prescription[] = [
     {
       id: "rx-1",
+      doctor_id: "mock-doctor-3",
+      patient_id: patientId,
+      appointment_id: "mock-appointment-3",
       doctor: {
         name: "Sarah Johnson",
         specialization: "Cardiologist"
@@ -52,10 +55,15 @@ const Prescriptions = () => {
       medications: ["Atenolol 50mg", "Aspirin 81mg"],
       instructions: "Take once daily with food",
       dosage: "Once daily",
-      status: "Active"
+      status: "Active",
+      created_at: "2025-04-30T10:00:00Z",
+      updated_at: "2025-04-30T10:00:00Z"
     },
     {
       id: "rx-2",
+      doctor_id: "mock-doctor-4",
+      patient_id: patientId,
+      appointment_id: "mock-appointment-4",
       doctor: {
         name: "Robert Miller",
         specialization: "General Physician"
@@ -65,7 +73,9 @@ const Prescriptions = () => {
       medications: ["Amoxicillin 500mg"],
       instructions: "Take three times daily for 10 days",
       dosage: "Three times daily",
-      status: "Completed"
+      status: "Completed",
+      created_at: "2025-04-15T14:30:00Z",
+      updated_at: "2025-04-15T14:30:00Z"
     }
   ];
   
