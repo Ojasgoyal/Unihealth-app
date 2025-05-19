@@ -9,17 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/components/ui/use-toast";
+import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { CalendarIcon, MapPin } from "lucide-react";
+} from "@/components/ui/select";
+import { CalendarIcon, MapPin, Search } from "lucide-react";
 
 const FindDoctor = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [tempSearchQuery, setTempSearchQuery] = useState("");
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -38,58 +40,86 @@ const FindDoctor = () => {
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    setTempSearchQuery(e.target.value);
+  };
+
+  const handleSearch = () => {
+    setSearchQuery(tempSearchQuery);
   };
 
   const handleSpecializationChange = (value: string) => {
     setSpecializationFilter(value);
   };
 
-  if (isLoading) return <div>Loading doctors...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8 flex items-center space-x-4">
-        <Input
-          type="text"
-          placeholder="Search doctors..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="max-w-md"
-        />
-        <Select value={specializationFilter} onValueChange={handleSpecializationChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by Specialization" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Specializations</SelectItem>
-            <SelectItem value="Cardiologist">Cardiologist</SelectItem>
-            <SelectItem value="Dermatologist">Dermatologist</SelectItem>
-            <SelectItem value="Endocrinologist">Endocrinologist</SelectItem>
-            <SelectItem value="Gastroenterologist">Gastroenterologist</SelectItem>
-            <SelectItem value="Neurologist">Neurologist</SelectItem>
-            <SelectItem value="Oncologist">Oncologist</SelectItem>
-            <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
-            <SelectItem value="Orthopedist">Orthopedist</SelectItem>
-            <SelectItem value="Pediatrician">Pediatrician</SelectItem>
-            <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
-            <SelectItem value="Pulmonologist">Pulmonologist</SelectItem>
-            <SelectItem value="Radiologist">Radiologist</SelectItem>
-            <SelectItem value="Rheumatologist">Rheumatologist</SelectItem>
-            <SelectItem value="Urologist">Urologist</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <ScrollArea className="h-[600px] w-full rounded-md border">
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
-          {filteredDoctors.map((doctor) => (
-            <DoctorCard key={doctor.id} doctor={doctor} />
-          ))}
+    <DashboardLayout userRole="patient">
+      <div className="container mx-auto py-8">
+        <h1 className="text-2xl font-bold tracking-tight mb-4">Find a Doctor</h1>
+        <p className="text-muted-foreground mb-6">Search for specialists that match your needs</p>
+        
+        <div className="mb-8 flex items-center space-x-4">
+          <div className="flex-1 flex items-center space-x-2">
+            <Input
+              type="text"
+              placeholder="Search doctors..."
+              value={tempSearchQuery}
+              onChange={handleSearchChange}
+              className="max-w-md"
+            />
+            <Button onClick={handleSearch} className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Search
+            </Button>
+          </div>
+          <Select value={specializationFilter} onValueChange={handleSpecializationChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Specialization" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Specializations</SelectItem>
+              <SelectItem value="Cardiologist">Cardiologist</SelectItem>
+              <SelectItem value="Dermatologist">Dermatologist</SelectItem>
+              <SelectItem value="Endocrinologist">Endocrinologist</SelectItem>
+              <SelectItem value="Gastroenterologist">Gastroenterologist</SelectItem>
+              <SelectItem value="Neurologist">Neurologist</SelectItem>
+              <SelectItem value="Oncologist">Oncologist</SelectItem>
+              <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
+              <SelectItem value="Orthopedist">Orthopedist</SelectItem>
+              <SelectItem value="Pediatrician">Pediatrician</SelectItem>
+              <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
+              <SelectItem value="Pulmonologist">Pulmonologist</SelectItem>
+              <SelectItem value="Radiologist">Radiologist</SelectItem>
+              <SelectItem value="Rheumatologist">Rheumatologist</SelectItem>
+              <SelectItem value="Urologist">Urologist</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </ScrollArea>
-    </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center p-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-healthcare-primary"></div>
+          </div>
+        ) : filteredDoctors.length > 0 ? (
+          <ScrollArea className="h-[600px] w-full rounded-md border">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
+              {filteredDoctors.map((doctor) => (
+                <DoctorCard key={doctor.id} doctor={doctor} />
+              ))}
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+            <Search className="h-12 w-12 mx-auto text-gray-400" />
+            <h3 className="mt-4 text-lg font-medium">No doctors found</h3>
+            <p className="mt-1 text-gray-500">
+              Try adjusting your search or filter to find available doctors.
+            </p>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
   );
 };
 

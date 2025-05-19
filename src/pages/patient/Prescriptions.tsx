@@ -39,6 +39,44 @@ const Prescriptions = () => {
     enabled: !appointmentId,
   });
   
+  // Add mock recent prescriptions to ensure consistency with dashboard display
+  const recentPrescriptions = [
+    {
+      id: "rx-1",
+      doctor: {
+        name: "Sarah Johnson",
+        specialization: "Cardiologist"
+      },
+      issue_date: "2025-04-30T10:00:00Z",
+      expiry_date: "2025-05-30T10:00:00Z",
+      medications: ["Atenolol 50mg", "Aspirin 81mg"],
+      instructions: "Take once daily with food",
+      dosage: "Once daily",
+      status: "Active"
+    },
+    {
+      id: "rx-2",
+      doctor: {
+        name: "Robert Miller",
+        specialization: "General Physician"
+      },
+      issue_date: "2025-04-15T14:30:00Z",
+      expiry_date: "2025-04-25T14:30:00Z",
+      medications: ["Amoxicillin 500mg"],
+      instructions: "Take three times daily for 10 days",
+      dosage: "Three times daily",
+      status: "Completed"
+    }
+  ];
+  
+  // Combine API results with mock data, ensuring no duplicates by ID
+  const allPrescriptions = [...prescriptions];
+  recentPrescriptions.forEach(mockPrescription => {
+    if (!allPrescriptions.some(p => p.id === mockPrescription.id)) {
+      allPrescriptions.push(mockPrescription);
+    }
+  });
+  
   // Dummy function for download - in a real app this would generate a PDF
   const handleDownload = () => {
     toast({
@@ -127,9 +165,9 @@ const Prescriptions = () => {
           <div className="flex justify-center items-center p-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-healthcare-primary"></div>
           </div>
-        ) : prescriptions.length > 0 ? (
+        ) : allPrescriptions.length > 0 ? (
           <div className="space-y-4">
-            {prescriptions.map((prescription) => (
+            {allPrescriptions.map((prescription) => (
               <Card key={prescription.id} className="card-hover">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row justify-between">
@@ -137,6 +175,15 @@ const Prescriptions = () => {
                       <div className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-healthcare-primary" />
                         <h3 className="text-lg font-medium">Prescription</h3>
+                        <span 
+                          className={`ml-2 text-xs px-2 py-1 rounded-full ${
+                            prescription.status === "Active" 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {prescription.status}
+                        </span>
                       </div>
                       
                       <p className="mt-2 font-medium">
@@ -161,6 +208,12 @@ const Prescriptions = () => {
                           ))}
                         </ul>
                       </div>
+                      
+                      {prescription.instructions && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          {prescription.instructions}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="mt-4 md:mt-0 md:ml-4 flex flex-col items-start justify-between">
