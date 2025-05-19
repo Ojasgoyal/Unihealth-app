@@ -34,6 +34,17 @@ export interface CreatePrescriptionData {
 }
 
 export const createPrescription = async (data: CreatePrescriptionData): Promise<Prescription> => {
+  // Check if the prescriptions table exists
+  const { data: tableExists, error: tableError } = await supabase
+    .from('prescriptions')
+    .select('id')
+    .limit(1);
+
+  if (tableError) {
+    console.error('Error checking prescriptions table:', tableError);
+    throw new Error('The prescriptions table does not exist. Please create it first.');
+  }
+
   const { data: prescription, error } = await supabase
     .from('prescriptions')
     .insert([data])
@@ -45,10 +56,21 @@ export const createPrescription = async (data: CreatePrescriptionData): Promise<
     throw error;
   }
   
-  return prescription;
+  return prescription as Prescription;
 };
 
 export const getPatientPrescriptions = async (patientId: string): Promise<Prescription[]> => {
+  // Check if the prescriptions table exists
+  const { data: tableExists, error: tableError } = await supabase
+    .from('prescriptions')
+    .select('id')
+    .limit(1);
+
+  if (tableError) {
+    console.error('Error checking prescriptions table:', tableError);
+    return []; // Return empty array if table doesn't exist yet
+  }
+
   const { data, error } = await supabase
     .from('prescriptions')
     .select(`
@@ -69,10 +91,21 @@ export const getPatientPrescriptions = async (patientId: string): Promise<Prescr
     throw error;
   }
   
-  return data || [];
+  return data as Prescription[] || [];
 };
 
 export const getPrescriptionByAppointment = async (appointmentId: string): Promise<Prescription | null> => {
+  // Check if the prescriptions table exists
+  const { data: tableExists, error: tableError } = await supabase
+    .from('prescriptions')
+    .select('id')
+    .limit(1);
+
+  if (tableError) {
+    console.error('Error checking prescriptions table:', tableError);
+    return null; // Return null if table doesn't exist yet
+  }
+
   const { data, error } = await supabase
     .from('prescriptions')
     .select()
@@ -84,5 +117,5 @@ export const getPrescriptionByAppointment = async (appointmentId: string): Promi
     throw error;
   }
   
-  return data;
+  return data as Prescription | null;
 };
