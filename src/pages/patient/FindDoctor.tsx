@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -15,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CalendarIcon, MapPin, Search } from "lucide-react";
+import { CalendarIcon, MapPin } from "lucide-react";
 
 const FindDoctor = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,9 +24,17 @@ const FindDoctor = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Fix: Remove the unnecessary arguments to getDoctors
   const { data: doctors = [], isLoading, error } = useQuery({
     queryKey: ["doctors", searchQuery, specializationFilter],
-    queryFn: () => getDoctors(searchQuery, specializationFilter),
+    queryFn: () => getDoctors(),
+  });
+
+  // Filter doctors based on search and specialization
+  const filteredDoctors = doctors.filter(doctor => {
+    const matchesSearch = doctor.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecialization = !specializationFilter || doctor.specialization === specializationFilter;
+    return matchesSearch && matchesSpecialization;
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,7 +84,7 @@ const FindDoctor = () => {
 
       <ScrollArea className="h-[600px] w-full rounded-md border">
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4">
-          {doctors.map((doctor) => (
+          {filteredDoctors.map((doctor) => (
             <DoctorCard key={doctor.id} doctor={doctor} />
           ))}
         </div>
@@ -123,12 +132,12 @@ const BookAppointmentButton = ({ doctor }) => {
     toast({
       title: "Doctor selected",
       description: `You've selected ${doctor.name} for an appointment.`,
-      variant: "default", // Changed from "success" to "default"
+      duration: 3000,
     });
   };
 
   return (
-    <Button onClick={handleBookAppointment}>
+    <Button onClick={handleBookAppointment} className="w-full">
       Book Appointment
     </Button>
   );

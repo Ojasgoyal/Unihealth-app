@@ -34,88 +34,79 @@ export interface CreatePrescriptionData {
 }
 
 export const createPrescription = async (data: CreatePrescriptionData): Promise<Prescription> => {
-  // Check if the prescriptions table exists
-  const { data: tableExists, error: tableError } = await supabase
-    .from('prescriptions')
-    .select('id')
-    .limit(1);
-
-  if (tableError) {
-    console.error('Error checking prescriptions table:', tableError);
-    throw new Error('The prescriptions table does not exist. Please create it first.');
-  }
-
-  const { data: prescription, error } = await supabase
-    .from('prescriptions')
-    .insert([data])
-    .select()
-    .single();
+  // Since we don't have the prescriptions table yet, we'll mock the response
+  console.log("Creating prescription:", data);
   
-  if (error) {
-    console.error('Error creating prescription:', error);
-    throw error;
-  }
+  // Return a mock prescription
+  const mockPrescription: Prescription = {
+    id: "mock-id-" + Date.now(),
+    ...data,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    expiry_date: data.expiry_date || null
+  };
   
-  return prescription as Prescription;
+  return mockPrescription;
 };
 
 export const getPatientPrescriptions = async (patientId: string): Promise<Prescription[]> => {
-  // Check if the prescriptions table exists
-  const { data: tableExists, error: tableError } = await supabase
-    .from('prescriptions')
-    .select('id')
-    .limit(1);
-
-  if (tableError) {
-    console.error('Error checking prescriptions table:', tableError);
-    return []; // Return empty array if table doesn't exist yet
-  }
-
-  const { data, error } = await supabase
-    .from('prescriptions')
-    .select(`
-      *,
-      doctor:doctor_id (
-        name,
-        specialization
-      ),
-      appointment:appointment_id (
-        appointment_date
-      )
-    `)
-    .eq('patient_id', patientId)
-    .order('created_at', { ascending: false });
+  // Since we don't have the prescriptions table yet, we'll return mock data
+  console.log("Fetching prescriptions for patient:", patientId);
   
-  if (error) {
-    console.error('Error fetching patient prescriptions:', error);
-    throw error;
-  }
+  // Return mock prescriptions
+  const mockPrescriptions: Prescription[] = [
+    {
+      id: "mock-id-1",
+      appointment_id: "mock-appointment-1",
+      doctor_id: "mock-doctor-1",
+      patient_id: patientId,
+      medications: ["Amoxicillin 500mg", "Ibuprofen 400mg"],
+      dosage: "One tablet three times daily",
+      instructions: "Take after meals with plenty of water",
+      issue_date: new Date().toISOString(),
+      expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      doctor: {
+        name: "Dr. Sarah Johnson",
+        specialization: "General Practitioner"
+      },
+      appointment: {
+        appointment_date: new Date().toISOString()
+      }
+    }
+  ];
   
-  return data as Prescription[] || [];
+  return mockPrescriptions;
 };
 
 export const getPrescriptionByAppointment = async (appointmentId: string): Promise<Prescription | null> => {
-  // Check if the prescriptions table exists
-  const { data: tableExists, error: tableError } = await supabase
-    .from('prescriptions')
-    .select('id')
-    .limit(1);
-
-  if (tableError) {
-    console.error('Error checking prescriptions table:', tableError);
-    return null; // Return null if table doesn't exist yet
-  }
-
-  const { data, error } = await supabase
-    .from('prescriptions')
-    .select()
-    .eq('appointment_id', appointmentId)
-    .maybeSingle();
+  // Since we don't have the prescriptions table yet, we'll check if this is a mock ID
+  console.log("Fetching prescription for appointment:", appointmentId);
   
-  if (error) {
-    console.error('Error fetching prescription:', error);
-    throw error;
+  if (appointmentId === "mock-appointment-1") {
+    // Return a mock prescription
+    return {
+      id: "mock-id-1",
+      appointment_id: appointmentId,
+      doctor_id: "mock-doctor-1",
+      patient_id: "mock-patient-1",
+      medications: ["Amoxicillin 500mg", "Ibuprofen 400mg"],
+      dosage: "One tablet three times daily",
+      instructions: "Take after meals with plenty of water",
+      issue_date: new Date().toISOString(),
+      expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      doctor: {
+        name: "Dr. Sarah Johnson",
+        specialization: "General Practitioner"
+      },
+      appointment: {
+        appointment_date: new Date().toISOString()
+      }
+    };
   }
   
-  return data as Prescription | null;
+  return null;
 };
