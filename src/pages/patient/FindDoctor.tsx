@@ -26,18 +26,20 @@ const FindDoctor = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Fix: Remove the unnecessary arguments to getDoctors
   const { data: doctors = [], isLoading, error } = useQuery({
-    queryKey: ["doctors", searchQuery, specializationFilter],
+    queryKey: ["doctors"],
     queryFn: () => getDoctors(),
   });
 
   // Filter doctors based on search and specialization
   const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = doctor.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = searchQuery === "" || doctor.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecialization = specializationFilter === "all" || doctor.specialization === specializationFilter;
     return matchesSearch && matchesSpecialization;
   });
+
+  // Gets unique specializations from all doctors
+  const specializations = ["all", ...Array.from(new Set(doctors.map(doctor => doctor.specialization)))];
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTempSearchQuery(e.target.value);
@@ -51,7 +53,13 @@ const FindDoctor = () => {
     setSpecializationFilter(value);
   };
 
-  if (error) return <div>Error: {error.message}</div>;
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  if (error) return <div>Error: {(error as Error).message}</div>;
 
   return (
     <DashboardLayout userRole="patient">
@@ -59,13 +67,14 @@ const FindDoctor = () => {
         <h1 className="text-2xl font-bold tracking-tight mb-4">Find a Doctor</h1>
         <p className="text-muted-foreground mb-6">Search for specialists that match your needs</p>
         
-        <div className="mb-8 flex items-center space-x-4">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1 flex items-center space-x-2">
             <Input
               type="text"
-              placeholder="Search doctors..."
+              placeholder="Search doctors by name..."
               value={tempSearchQuery}
               onChange={handleSearchChange}
+              onKeyPress={handleKeyPress}
               className="max-w-md"
             />
             <Button onClick={handleSearch} className="flex items-center gap-2">
@@ -74,25 +83,15 @@ const FindDoctor = () => {
             </Button>
           </div>
           <Select value={specializationFilter} onValueChange={handleSpecializationChange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Filter by Specialization" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Specializations</SelectItem>
-              <SelectItem value="Cardiologist">Cardiologist</SelectItem>
-              <SelectItem value="Dermatologist">Dermatologist</SelectItem>
-              <SelectItem value="Endocrinologist">Endocrinologist</SelectItem>
-              <SelectItem value="Gastroenterologist">Gastroenterologist</SelectItem>
-              <SelectItem value="Neurologist">Neurologist</SelectItem>
-              <SelectItem value="Oncologist">Oncologist</SelectItem>
-              <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
-              <SelectItem value="Orthopedist">Orthopedist</SelectItem>
-              <SelectItem value="Pediatrician">Pediatrician</SelectItem>
-              <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
-              <SelectItem value="Pulmonologist">Pulmonologist</SelectItem>
-              <SelectItem value="Radiologist">Radiologist</SelectItem>
-              <SelectItem value="Rheumatologist">Rheumatologist</SelectItem>
-              <SelectItem value="Urologist">Urologist</SelectItem>
+              {specializations.map((specialization) => (
+                <SelectItem key={specialization} value={specialization}>
+                  {specialization === "all" ? "All Specializations" : specialization}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -129,7 +128,7 @@ const DoctorCard = ({ doctor }) => {
       <CardHeader>
         <div className="flex items-center">
           <Avatar className="mr-4">
-            <AvatarImage src="https://github.com/shadcn.png" alt={doctor.name} />
+            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.name}`} alt={doctor.name} />
             <AvatarFallback>{doctor.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
@@ -167,8 +166,12 @@ const BookAppointmentButton = ({ doctor }) => {
   };
 
   return (
-    <Button onClick={handleBookAppointment} className="w-full">
-      Book Appointment
+    <Button 
+      onClick={handleBookAppointment} 
+      className="w-full"
+      disabled={!doctor.available}
+    >
+      {doctor.available ? "Book Appointment" : "Currently Unavailable"}
     </Button>
   );
 };

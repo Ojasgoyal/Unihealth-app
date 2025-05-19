@@ -31,72 +31,158 @@ export interface CreateAppointmentData {
 }
 
 export const createAppointment = async (data: CreateAppointmentData): Promise<Appointment> => {
-  const { data: appointment, error } = await supabase
-    .from('appointments')
-    .insert([data])
-    .select()
-    .single();
-  
-  if (error) {
+  try {
+    const appointmentData = {
+      ...data,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      reason: data.reason || null,
+      notes: data.notes || null
+    };
+
+    const { data: appointment, error } = await supabase
+      .from('appointments')
+      .insert([appointmentData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return appointment;
+  } catch (error) {
     console.error('Error creating appointment:', error);
     throw error;
   }
-  
-  return appointment;
 };
 
 export const getPatientAppointments = async (patientId: string): Promise<Appointment[]> => {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select(`
-      *,
-      doctor:doctor_id (
-        name,
-        specialization,
-        email
-      )
-    `)
-    .eq('patient_id', patientId)
-    .order('appointment_date', { ascending: true });
-  
-  if (error) {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        doctor:doctor_id (
+          name,
+          specialization,
+          email
+        )
+      `)
+      .eq('patient_id', patientId)
+      .order('appointment_date', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
     console.error('Error fetching patient appointments:', error);
     throw error;
   }
-  
-  return data || [];
 };
 
 export const getDoctorAppointments = async (doctorId: string): Promise<Appointment[]> => {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('doctor_id', doctorId)
-    .order('appointment_date', { ascending: true });
-  
-  if (error) {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('doctor_id', doctorId)
+      .order('appointment_date', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
     console.error('Error fetching doctor appointments:', error);
     throw error;
   }
-  
-  return data || [];
 };
 
 export const updateAppointmentStatus = async (
   id: string, 
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
 ): Promise<Appointment> => {
-  const { data, error } = await supabase
-    .from('appointments')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
     console.error('Error updating appointment status:', error);
     throw error;
   }
-  
-  return data;
+};
+
+export const getAppointmentById = async (id: string): Promise<Appointment | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        doctor:doctor_id (
+          name,
+          specialization,
+          email
+        )
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      // If it's a "no rows returned" error, return null
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching appointment:', error);
+    throw error;
+  }
+};
+
+export const getAppointmentsByStatus = async (status: string): Promise<Appointment[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        doctor:doctor_id (
+          name,
+          specialization,
+          email
+        )
+      `)
+      .eq('status', status)
+      .order('appointment_date', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error(`Error fetching ${status} appointments:`, error);
+    throw error;
+  }
+};
+
+export const getAllAppointments = async (): Promise<Appointment[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        doctor:doctor_id (
+          name,
+          specialization,
+          email
+        )
+      `)
+      .order('appointment_date', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching all appointments:', error);
+    throw error;
+  }
 };

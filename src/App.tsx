@@ -13,6 +13,8 @@ import FindDoctor from "./pages/patient/FindDoctor";
 import NewAppointment from "./pages/patient/NewAppointment";
 import Appointments from "./pages/patient/Appointments";
 import Prescriptions from "./pages/patient/Prescriptions";
+import PrescriptionsManagement from "./pages/admin/PrescriptionsManagement";
+import AppointmentsManagement from "./pages/admin/AppointmentsManagement";
 
 // For demo purposes, allow access to admin pages
 const AdminRoute = () => {
@@ -52,6 +54,8 @@ function App() {
       <Route element={<AdminRoute />}>
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/admin/doctors" element={<DoctorsManagement />} />
+        <Route path="/admin/prescriptions" element={<PrescriptionsManagement />} />
+        <Route path="/admin/appointments" element={<AppointmentsManagement />} />
       </Route>
 
       {/* Redirects */}
