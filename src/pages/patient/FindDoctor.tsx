@@ -20,7 +20,7 @@ import { CalendarIcon, MapPin } from "lucide-react";
 
 const FindDoctor = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [specializationFilter, setSpecializationFilter] = useState("");
+  const [specializationFilter, setSpecializationFilter] = useState("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,7 +33,7 @@ const FindDoctor = () => {
   // Filter doctors based on search and specialization
   const filteredDoctors = doctors.filter(doctor => {
     const matchesSearch = doctor.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialization = !specializationFilter || doctor.specialization === specializationFilter;
+    const matchesSpecialization = specializationFilter === "all" || doctor.specialization === specializationFilter;
     return matchesSearch && matchesSpecialization;
   });
 
@@ -58,12 +58,12 @@ const FindDoctor = () => {
           onChange={handleSearchChange}
           className="max-w-md"
         />
-        <Select onValueChange={handleSpecializationChange}>
+        <Select value={specializationFilter} onValueChange={handleSpecializationChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by Specialization" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Specializations</SelectItem>
+            <SelectItem value="all">All Specializations</SelectItem>
             <SelectItem value="Cardiologist">Cardiologist</SelectItem>
             <SelectItem value="Dermatologist">Dermatologist</SelectItem>
             <SelectItem value="Endocrinologist">Endocrinologist</SelectItem>
