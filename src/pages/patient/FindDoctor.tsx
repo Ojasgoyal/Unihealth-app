@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,88 +16,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/components/ui/use-toast";
 import { MapPin, Calendar, Clock, Search, Star } from "lucide-react";
-
-// Mock doctor data
-const allDoctors = [
-  {
-    id: 1,
-    name: "Dr. Michael Stevens",
-    specialization: "Cardiology",
-    hospital: "Central Hospital",
-    location: "Downtown, New York",
-    rating: 4.8,
-    reviews: 124,
-    experience: 15,
-    education: "Harvard Medical School",
-    nextAvailable: "Today",
-    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8ZG9jdG9yfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-  },
-  {
-    id: 2,
-    name: "Dr. Emily Chen",
-    specialization: "Pediatrics",
-    hospital: "Children's Medical Center",
-    location: "Westside, Chicago",
-    rating: 4.9,
-    reviews: 215,
-    experience: 12,
-    education: "Johns Hopkins University",
-    nextAvailable: "Tomorrow",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTV8fGRvY3RvcnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60"
-  },
-  {
-    id: 3,
-    name: "Dr. James Wilson",
-    specialization: "Orthopedics",
-    hospital: "University Hospital",
-    location: "Midtown, Los Angeles",
-    rating: 4.7,
-    reviews: 98,
-    experience: 20,
-    education: "Stanford University",
-    nextAvailable: "May 15, 2025",
-    image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTZ8fGRvY3RvcnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60"
-  },
-  {
-    id: 4,
-    name: "Dr. Lisa Thompson",
-    specialization: "Neurology",
-    hospital: "Central Hospital",
-    location: "Downtown, New York",
-    rating: 4.8,
-    reviews: 156,
-    experience: 18,
-    education: "Yale School of Medicine",
-    nextAvailable: "May 14, 2025",
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTF8fGRvY3RvcnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60"
-  },
-  {
-    id: 5,
-    name: "Dr. Robert Miller",
-    specialization: "Dermatology",
-    hospital: "Skin & Beauty Clinic",
-    location: "Uptown, San Francisco",
-    rating: 4.6,
-    reviews: 89,
-    experience: 10,
-    education: "Columbia University",
-    nextAvailable: "May 16, 2025",
-    image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fGRvY3RvcnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60"
-  },
-  {
-    id: 6,
-    name: "Dr. Sarah Johnson",
-    specialization: "Cardiology",
-    hospital: "Heart Institute",
-    location: "Eastside, Boston",
-    rating: 4.9,
-    reviews: 201,
-    experience: 22,
-    education: "Mayo Medical School",
-    nextAvailable: "Today",
-    image: "https://images.unsplash.com/photo-1571772996211-2f02c9727629?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8OHx8ZG9jdG9yfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { getDoctors, Doctor } from "@/services/doctorsService";
 
 // Specialization options for filter
 const specializations = [
@@ -106,20 +27,27 @@ const specializations = [
   { value: "Neurology", label: "Neurology" },
   { value: "Orthopedics", label: "Orthopedics" },
   { value: "Pediatrics", label: "Pediatrics" },
+  { value: "Endocrinology", label: "Endocrinology" },
+  { value: "Gastroenterology", label: "Gastroenterology" },
+  { value: "Oncology", label: "Oncology" },
+  { value: "Ophthalmology", label: "Ophthalmology" },
+  { value: "Psychiatry", label: "Psychiatry" },
+  { value: "Pulmonology", label: "Pulmonology" },
+  { value: "Radiology", label: "Radiology" },
+  { value: "Urology", label: "Urology" },
 ];
 
-// Locations for filter
+// Locations for filter (we'll extract these dynamically in a real app)
 const locations = [
   { value: "all", label: "All Locations" },
   { value: "New York", label: "New York" },
   { value: "Chicago", label: "Chicago" },
   { value: "Los Angeles", label: "Los Angeles" },
-  { value: "Boston", label: "Boston" },
-  { value: "San Francisco", label: "San Francisco" },
 ];
 
 const FindDoctor = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // State for filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,42 +56,45 @@ const FindDoctor = () => {
   const [minRating, setMinRating] = useState(0);
   const [availability, setAvailability] = useState("all"); // "all", "today", "this-week"
   
+  // Fetch doctors from database
+  const { data: doctors = [], isLoading, error } = useQuery({
+    queryKey: ['findDoctors'],
+    queryFn: getDoctors
+  });
+  
   // Filter doctors based on criteria
-  const filteredDoctors = allDoctors.filter(doctor => {
+  const filteredDoctors = doctors.filter(doctor => {
     // Search query filter
     const matchesSearch = doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          doctor.hospital.toLowerCase().includes(searchQuery.toLowerCase());
+                          doctor.email.toLowerCase().includes(searchQuery.toLowerCase());
     
     // Specialization filter
     const matchesSpecialization = specialization === "all" || doctor.specialization === specialization;
     
-    // Location filter
-    const matchesLocation = location === "all" || doctor.location.includes(location);
-    
-    // Rating filter
-    const matchesRating = doctor.rating >= minRating;
-    
     // Availability filter
-    let matchesAvailability = true;
-    if (availability === "today") {
-      matchesAvailability = doctor.nextAvailable === "Today";
-    } else if (availability === "this-week") {
-      matchesAvailability = doctor.nextAvailable === "Today" || 
-                           doctor.nextAvailable === "Tomorrow" ||
-                           new Date(doctor.nextAvailable) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    }
+    const matchesAvailability = availability === "all" || doctor.available;
     
-    return matchesSearch && matchesSpecialization && matchesLocation && matchesRating && matchesAvailability;
+    return matchesSearch && matchesSpecialization && matchesAvailability;
   });
 
-  const handleBookAppointment = (doctorId: number) => {
+  const handleBookAppointment = (doctor: Doctor) => {
     // Navigate to appointment booking with selected doctor
+    navigate("/patient/appointments/new", { state: { selectedDoctor: doctor } });
+    
     toast({
-      title: "Booking Initiated",
-      description: "Redirecting to appointment booking page...",
+      title: "Doctor Selected",
+      description: `You've selected ${doctor.name}. Complete your appointment details.`,
     });
   };
+
+  if (error) {
+    toast({
+      title: "Error loading doctors",
+      description: "There was a problem loading the doctors list.",
+      variant: "destructive",
+    });
+  }
 
   return (
     <DashboardLayout userRole="patient">
@@ -240,25 +171,10 @@ const FindDoctor = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Any time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="this-week">This Week</SelectItem>
+                    <SelectItem value="available">Currently Available</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-3 block">
-                Minimum Rating: {minRating === 0 ? "Any" : minRating.toFixed(1)}
-              </label>
-              <Slider
-                defaultValue={[0]}
-                max={5}
-                step={0.5}
-                value={[minRating]}
-                onValueChange={(values) => setMinRating(values[0])}
-                className="max-w-md"
-              />
             </div>
           </div>
         </div>
@@ -266,31 +182,37 @@ const FindDoctor = () => {
         {/* Results Section */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">{filteredDoctors.length} doctors found</h2>
-            <Select defaultValue="rating">
+            <h2 className="text-lg font-semibold">
+              {isLoading ? "Loading doctors..." : `${filteredDoctors.length} doctors found`}
+            </h2>
+            <Select defaultValue="name">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="experience">Most Experienced</SelectItem>
-                <SelectItem value="availability">Earliest Available</SelectItem>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="specialization">Specialization</SelectItem>
+                <SelectItem value="availability">Availability</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
-          {filteredDoctors.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center p-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-healthcare-primary"></div>
+            </div>
+          ) : filteredDoctors.length > 0 ? (
             <div className="space-y-4">
               {filteredDoctors.map((doctor) => (
                 <Card key={doctor.id} className="overflow-hidden card-hover">
                   <CardContent className="p-0">
                     <div className="flex flex-col md:flex-row">
-                      <div className="md:w-1/4 h-48 md:h-auto">
-                        <img 
-                          src={doctor.image} 
-                          alt={doctor.name} 
-                          className="w-full h-full object-cover" 
-                        />
+                      <div className="md:w-1/4 h-48 md:h-auto bg-gray-100 flex items-center justify-center">
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <div className="w-24 h-24 rounded-full bg-healthcare-primary/20 flex items-center justify-center text-healthcare-primary">
+                            <span className="text-3xl font-bold">{doctor.name.charAt(0)}</span>
+                          </div>
+                        </div>
                       </div>
                       <div className="p-4 md:p-6 flex-1">
                         <div className="flex flex-col md:flex-row md:items-start justify-between mb-4">
@@ -299,33 +221,37 @@ const FindDoctor = () => {
                             <p className="text-healthcare-primary">{doctor.specialization}</p>
                             <div className="flex items-center mt-1">
                               <MapPin className="h-4 w-4 text-gray-500 mr-1" />
-                              <span className="text-sm text-gray-500">{doctor.hospital}, {doctor.location}</span>
+                              <span className="text-sm text-gray-500">Central Hospital</span>
                             </div>
                           </div>
                           <div className="mt-2 md:mt-0 md:text-right">
                             <div className="flex items-center md:justify-end">
-                              <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                              <span className="font-semibold">{doctor.rating}</span>
-                              <span className="text-sm text-gray-500 ml-1">({doctor.reviews} reviews)</span>
+                              <Badge 
+                                variant={doctor.available ? "success" : "destructive"} 
+                                className={doctor.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                              >
+                                {doctor.available ? "Available" : "Unavailable"}
+                              </Badge>
                             </div>
                             <div className="mt-1 text-sm text-gray-500">
-                              {doctor.experience} years experience
+                              {doctor.email}
                             </div>
                           </div>
                         </div>
                         
                         <div className="flex flex-wrap gap-2 mb-4">
-                          <Badge variant="secondary">{doctor.education}</Badge>
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          <Badge variant="secondary">{doctor.specialization}</Badge>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                             <Clock className="h-3 w-3 mr-1" /> 
-                            Next Available: {doctor.nextAvailable}
+                            Schedule: {doctor.schedule}
                           </Badge>
                         </div>
                         
                         <div className="flex flex-col sm:flex-row gap-3 mt-4">
                           <Button 
-                            onClick={() => handleBookAppointment(doctor.id)}
+                            onClick={() => handleBookAppointment(doctor)}
                             className="bg-healthcare-primary hover:bg-healthcare-secondary"
+                            disabled={!doctor.available}
                           >
                             <Calendar className="mr-2 h-4 w-4" />
                             Book Appointment

@@ -1,48 +1,66 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 
 // Pages
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AdminDashboard from "./pages/AdminDashboard";
+import NotFound from "./pages/NotFound";
 import PatientDashboard from "./pages/PatientDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import DoctorsManagement from "./pages/admin/DoctorsManagement";
 import FindDoctor from "./pages/patient/FindDoctor";
-import NotFound from "./pages/NotFound";
+import NewAppointment from "./pages/patient/NewAppointment";
+import Appointments from "./pages/patient/Appointments";
+import Prescriptions from "./pages/patient/Prescriptions";
 
-const queryClient = new QueryClient();
+// For demo purposes, allow access to admin pages
+const AdminRoute = () => {
+  return <Outlet />;
+};
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/doctors" element={<DoctorsManagement />} />
-          
-          {/* Patient Routes */}
-          <Route path="/patient-dashboard" element={<PatientDashboard />} />
-          <Route path="/patient/find-doctor" element={<FindDoctor />} />
-          
-          {/* 404 Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+// Auth Routes
+const AuthenticatedRoute = () => {
+  return <Outlet />;
+};
+
+// Public Routes
+const PublicRoute = () => {
+  return <Outlet />;
+};
+
+function App() {
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route element={<PublicRoute />}>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+
+      {/* Patient Routes */}
+      <Route element={<AuthenticatedRoute />}>
+        <Route path="/patient-dashboard" element={<PatientDashboard />} />
+        <Route path="/patient/find-doctor" element={<FindDoctor />} />
+        <Route path="/patient/appointments/new" element={<NewAppointment />} />
+        <Route path="/patient/appointments" element={<Appointments />} />
+        <Route path="/patient/prescriptions" element={<Prescriptions />} />
+      </Route>
+
+      {/* Admin Routes */}
+      <Route element={<AdminRoute />}>
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/doctors" element={<DoctorsManagement />} />
+      </Route>
+
+      {/* Redirects */}
+      <Route path="/dashboard" element={<Navigate to="/patient-dashboard" replace />} />
+      
+      {/* 404 Route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 export default App;

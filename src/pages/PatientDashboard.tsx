@@ -1,35 +1,67 @@
 
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
 import { Calendar, Clock, FileText, Search, ArrowRight, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getDoctors } from "@/services/doctorsService";
+import { getPatientAppointments } from "@/services/appointmentsService";
+import { format } from "date-fns";
 
 const PatientDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Mock upcoming appointments
-  const upcomingAppointments = [
-    {
-      doctorName: "Dr. Sarah Johnson",
-      specialty: "Cardiologist",
-      date: "May 15, 2025",
-      time: "10:30 AM",
-      location: "Central Hospital, Room 305"
+  
+  // Hardcoded patient ID for demo - in a real app, this would come from authentication context
+  const patientId = "123e4567-e89b-12d3-a456-426614174000";
+  
+  // Fetch a few doctors for recommendations
+  const { data: doctors = [] } = useQuery({
+    queryKey: ['recommendedDoctors'],
+    queryFn: getDoctors,
+    select: (data) => data.filter(d => d.available).slice(0, 3),
+  });
+  
+  // Fetch patient's upcoming appointments
+  const { data: appointments = [] } = useQuery({
+    queryKey: ['dashboardAppointments', patientId],
+    queryFn: () => getPatientAppointments(patientId),
+    select: (data) => {
+      // Filter to get only upcoming appointments
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return data
+        .filter(app => {
+          const appDate = new Date(app.appointment_date);
+          return (appDate >= today && app.status !== 'cancelled');
+        })
+        .slice(0, 2); // Show only first 2
     },
-    {
-      doctorName: "Dr. Michael Stevens",
-      specialty: "Dermatologist",
-      date: "May 22, 2025",
-      time: "2:15 PM",
-      location: "Medical Center, Room 210"
-    }
-  ];
+  });
 
-  // Mock recent prescriptions
+  // Format time from database format
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "";
+    
+    // If timeString is already formatted as "HH:MM AM/PM", return it as is
+    if (timeString.includes("AM") || timeString.includes("PM")) {
+      return timeString;
+    }
+    
+    // Parse time string (assuming format like "14:30:00")
+    const [hours, minutes] = timeString.split(":").map(Number);
+    
+    // Convert to 12-hour format
+    const period = hours >= 12 ? "PM" : "AM";
+    const hour12 = hours % 12 || 12;
+    
+    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Mock recent prescriptions - in a real app, fetch from API
   const recentPrescriptions = [
     {
       doctorName: "Dr. Sarah Johnson",
@@ -44,31 +76,6 @@ const PatientDashboard = () => {
       medications: ["Amoxicillin 500mg"],
       instructions: "Take three times daily for 10 days",
       status: "Completed"
-    }
-  ];
-
-  // Mock recommended doctors
-  const recommendedDoctors = [
-    {
-      name: "Dr. Emily Chen",
-      specialty: "Pediatrician",
-      hospital: "Children's Medical Center",
-      rating: 4.9,
-      availability: "Available today"
-    },
-    {
-      name: "Dr. James Wilson",
-      specialty: "Orthopedic Surgeon",
-      hospital: "University Hospital",
-      rating: 4.7,
-      availability: "Next available: May 17"
-    },
-    {
-      name: "Dr. Lisa Thompson",
-      specialty: "Neurologist",
-      hospital: "Central Hospital",
-      rating: 4.8,
-      availability: "Next available: May 14"
     }
   ];
 
@@ -151,23 +158,31 @@ const PatientDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {upcomingAppointments.length > 0 ? (
+              {appointments.length > 0 ? (
                 <div className="space-y-6">
-                  {upcomingAppointments.map((appointment, index) => (
-                    <div key={index} className="space-y-2">
+                  {appointments.map((appointment) => (
+                    <div key={appointment.id} className="space-y-2">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium">{appointment.doctorName}</p>
-                          <p className="text-sm text-gray-500">{appointment.specialty}</p>
+                          <p className="font-medium">
+                            Dr. {appointment.doctor?.name || "Unknown"}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {appointment.doctor?.specialization || "Specialist"}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium">{appointment.date}</p>
-                          <p className="text-xs text-gray-500">{appointment.time}</p>
+                          <p className="text-sm font-medium">
+                            {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatTime(appointment.start_time)}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center text-xs text-gray-500">
                         <MapPin className="h-3 w-3 mr-1" />
-                        <span>{appointment.location}</span>
+                        <span>Central Hospital</span>
                       </div>
                     </div>
                   ))}
@@ -178,7 +193,7 @@ const PatientDashboard = () => {
                   <Button 
                     variant="link" 
                     className="mt-2"
-                    onClick={() => navigate("/patient/appointments/new")}
+                    onClick={() => navigate("/patient/find-doctor")}
                   >
                     Schedule one now
                   </Button>
@@ -261,37 +276,18 @@ const PatientDashboard = () => {
         <Card className="card-hover">
           <CardHeader>
             <CardTitle>Recommended Doctors</CardTitle>
-            <CardDescription>Based on your medical history and location</CardDescription>
+            <CardDescription>Available healthcare professionals</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-3">
-              {recommendedDoctors.map((doctor, index) => (
-                <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              {doctors.length > 0 ? doctors.map((doctor) => (
+                <div key={doctor.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                   <h3 className="font-semibold">{doctor.name}</h3>
-                  <p className="text-sm text-gray-500">{doctor.specialty}</p>
-                  <p className="text-xs text-gray-500 mt-1">{doctor.hospital}</p>
-                  <div className="flex items-center mt-2">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <svg
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(doctor.rating) ? "text-yellow-400" : "text-gray-300"
-                          }`}
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 15.585l-6.918 3.636 1.32-7.7L.34 7.494l7.712-1.121L10 0l1.948 6.373 7.712 1.121-5.062 4.027 1.32 7.7z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="ml-1 text-sm">{doctor.rating}</span>
-                  </div>
-                  <p className="text-xs mt-2 text-healthcare-primary">{doctor.availability}</p>
+                  <p className="text-sm text-gray-500">{doctor.specialization}</p>
+                  <p className="text-xs text-gray-500 mt-1">Central Hospital</p>
+                  <p className="text-xs mt-2 text-healthcare-primary">
+                    {doctor.available ? "Available Now" : "Currently Unavailable"}
+                  </p>
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -301,7 +297,11 @@ const PatientDashboard = () => {
                     View Profile <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 </div>
-              ))}
+              )) : (
+                <div className="col-span-3 text-center py-6">
+                  <p className="text-gray-500">Loading recommended doctors...</p>
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter>
