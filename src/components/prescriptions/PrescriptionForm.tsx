@@ -112,11 +112,15 @@ export const PrescriptionForm: React.FC<PrescriptionFormProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {appointments.map((appointment) => (
-                    <SelectItem key={appointment.id} value={appointment.id}>
-                      {format(new Date(appointment.appointment_date), 'PP')}
-                    </SelectItem>
-                  ))}
+                  {appointments.length > 0 ? (
+                    appointments.map((appointment) => (
+                      <SelectItem key={appointment.id} value={appointment.id}>
+                        {format(new Date(appointment.appointment_date), 'PP')}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-appointments">No appointments available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -138,11 +142,15 @@ export const PrescriptionForm: React.FC<PrescriptionFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {doctors.map((doctor) => (
-                      <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.name}
-                      </SelectItem>
-                    ))}
+                    {doctors.length > 0 ? (
+                      doctors.map((doctor) => (
+                        <SelectItem key={doctor.id} value={doctor.id}>
+                          {doctor.name || "Doctor " + doctor.id.substring(0, 4)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-doctors">No doctors available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />

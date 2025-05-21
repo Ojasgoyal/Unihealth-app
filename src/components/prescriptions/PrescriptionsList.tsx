@@ -59,7 +59,7 @@ export const PrescriptionsList: React.FC<PrescriptionsListProps> = ({
                   {Array.isArray(prescription.medications) ? (
                     prescription.medications.map((med, i) => <li key={i}>{med}</li>)
                   ) : (
-                    <li>{String(prescription.medications)}</li>
+                    <li>{String(prescription.medications || "Unknown")}</li>
                   )}
                 </ul>
               </TableCell>
@@ -83,7 +83,7 @@ export const PrescriptionsList: React.FC<PrescriptionsListProps> = ({
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Select 
-                    defaultValue={prescription.status} 
+                    defaultValue={prescription.status || "active"} 
                     onValueChange={(value) => onStatusChange(prescription.id, value)}
                   >
                     <SelectTrigger className="w-[120px]">
