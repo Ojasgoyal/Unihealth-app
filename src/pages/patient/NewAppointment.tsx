@@ -3,9 +3,11 @@ import { useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AppointmentForm from "@/components/appointments/AppointmentForm";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NewAppointment = () => {
   const location = useLocation();
+  const { profile } = useAuth();
   const selectedDoctor = location.state?.selectedDoctor;
   
   return (
@@ -24,7 +26,10 @@ const NewAppointment = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AppointmentForm initialDoctor={selectedDoctor} />
+            <AppointmentForm 
+              initialDoctor={selectedDoctor} 
+              patientId={profile?.id} 
+            />
           </CardContent>
         </Card>
       </div>

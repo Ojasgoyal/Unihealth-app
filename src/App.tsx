@@ -1,5 +1,7 @@
 
-import { Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 // Pages
 import Index from "./pages/Index";
@@ -16,54 +18,58 @@ import Prescriptions from "./pages/patient/Prescriptions";
 import PrescriptionsManagement from "./pages/admin/PrescriptionsManagement";
 import AppointmentsManagement from "./pages/admin/AppointmentsManagement";
 
-// For demo purposes, allow access to admin pages
-const AdminRoute = () => {
-  return <Outlet />;
-};
-
-// Auth Routes
-const AuthenticatedRoute = () => {
-  return <Outlet />;
-};
-
-// Public Routes
-const PublicRoute = () => {
-  return <Outlet />;
-};
-
 function App() {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route element={<PublicRoute />}>
+    <AuthProvider>
+      <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Route>
+        
+        {/* Auth Routes */}
+        <Route element={<ProtectedRoute requireAuth={false} redirectPath="/patient-dashboard" />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
+        
+        {/* Patient Routes */}
+        <Route element={<ProtectedRoute requiredRole="patient" />}>
+          <Route path="/patient-dashboard" element={<PatientDashboard />} />
+          <Route path="/patient/find-doctor" element={<FindDoctor />} />
+          <Route path="/patient/appointments/new" element={<NewAppointment />} />
+          <Route path="/patient/appointments" element={<Appointments />} />
+          <Route path="/patient/prescriptions" element={<Prescriptions />} />
+        </Route>
 
-      {/* Patient Routes */}
-      <Route element={<AuthenticatedRoute />}>
-        <Route path="/patient-dashboard" element={<PatientDashboard />} />
-        <Route path="/patient/find-doctor" element={<FindDoctor />} />
-        <Route path="/patient/appointments/new" element={<NewAppointment />} />
-        <Route path="/patient/appointments" element={<Appointments />} />
-        <Route path="/patient/prescriptions" element={<Prescriptions />} />
-      </Route>
+        {/* Admin/Hospital Routes */}
+        <Route 
+          element={
+            <ProtectedRoute 
+              requiredRole={null} /* Allow both hospital and doctor roles */
+              redirectPath="/patient-dashboard" 
+            />
+          }
+        >
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/doctors" element={<DoctorsManagement />} />
+          <Route path="/admin/prescriptions" element={<PrescriptionsManagement />} />
+          <Route path="/admin/appointments" element={<AppointmentsManagement />} />
+        </Route>
 
-      {/* Admin Routes */}
-      <Route element={<AdminRoute />}>
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/doctors" element={<DoctorsManagement />} />
-        <Route path="/admin/prescriptions" element={<PrescriptionsManagement />} />
-        <Route path="/admin/appointments" element={<AppointmentsManagement />} />
-      </Route>
-
-      {/* Redirects */}
-      <Route path="/dashboard" element={<Navigate to="/patient-dashboard" replace />} />
-      
-      {/* 404 Route */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Redirects */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <Navigate 
+              to="/patient-dashboard" 
+              replace 
+            />
+          } 
+        />
+        
+        {/* 404 Route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 

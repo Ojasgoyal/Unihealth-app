@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search, User, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type HeaderProps = {
   userRole: "admin" | "patient";
@@ -23,6 +24,7 @@ type HeaderProps = {
 export const Header = ({ userRole }: HeaderProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile, signOut } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -37,17 +39,21 @@ export const Header = ({ userRole }: HeaderProps) => {
     }
   };
 
-  const handleLogout = () => {
-    // Implement logout functionality
-    navigate("/");
-    toast({
-      title: "Logged out successfully",
-    });
+  const handleLogout = async () => {
+    await signOut();
   };
 
-  const userName = userRole === "admin" ? "Hospital Admin" : "John Smith";
-  const userEmail = userRole === "admin" ? "admin@hospital.com" : "john.smith@example.com";
-  const userInitials = userRole === "admin" ? "HA" : "JS";
+  // Use profile data if available, otherwise fall back to props
+  const userName = profile ? 
+    `${profile.first_name || ''} ${profile.last_name || ''}` : 
+    (userRole === "admin" ? "Hospital Admin" : "John Smith");
+  
+  const userEmail = profile?.email || 
+    (userRole === "admin" ? "admin@hospital.com" : "john.smith@example.com");
+  
+  const userInitials = profile ? 
+    `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}` : 
+    (userRole === "admin" ? "HA" : "JS");
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
@@ -143,18 +149,18 @@ export const Header = ({ userRole }: HeaderProps) => {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
-                  <User className="mr-2 h-4 w-4" />
+                  <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
-                <User className="mr-2 h-4 w-4" />
+                <LogOut className="mr-2 h-4 w-4" />
                 <span>Logout</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
