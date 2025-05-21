@@ -4,18 +4,26 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Hospital, UserRound, Calendar, Clock, Search, PlusCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated, profile } = useAuth();
 
   const handleExplore = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigate("/login");
+      navigate(isAuthenticated ? getDashboardRoute() : "/login");
     }, 500);
+  };
+
+  // Helper function to get the appropriate dashboard route based on user role
+  const getDashboardRoute = () => {
+    if (!profile) return "/";
+    return profile.role === "patient" ? "/patient-dashboard" : "/admin-dashboard";
   };
 
   return (
@@ -28,17 +36,27 @@ const Index = () => {
             <h1 className="text-2xl font-bold text-gray-900">UniHealth</h1>
           </div>
           <div className="flex space-x-2">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/login")}
-            >
-              Login
-            </Button>
-            <Button 
-              onClick={() => navigate("/register")}
-            >
-              Register
-            </Button>
+            {isAuthenticated ? (
+              <Button 
+                onClick={() => navigate(getDashboardRoute())}
+              >
+                Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate("/login")}
+                >
+                  Login
+                </Button>
+                <Button 
+                  onClick={() => navigate("/register")}
+                >
+                  Register
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -214,13 +232,23 @@ const Index = () => {
               Join our platform to streamline healthcare management and improve patient experience
             </p>
             <div className="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <Button 
-                size="lg" 
-                onClick={() => navigate("/register")}
-                className="bg-healthcare-primary hover:bg-healthcare-secondary"
-              >
-                Create Account
-              </Button>
+              {isAuthenticated ? (
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate(getDashboardRoute())}
+                  className="bg-healthcare-primary hover:bg-healthcare-secondary"
+                >
+                  Go to Dashboard
+                </Button>
+              ) : (
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/register")}
+                  className="bg-healthcare-primary hover:bg-healthcare-secondary"
+                >
+                  Create Account
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="lg"

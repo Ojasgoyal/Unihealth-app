@@ -25,13 +25,13 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Index />} />
         
-        {/* Auth Routes */}
-        <Route element={<ProtectedRoute requireAuth={false} redirectPath="/patient-dashboard" />}>
+        {/* Auth Routes - non-authenticated users only */}
+        <Route element={<ProtectedRoute requireAuth={false} redirectPath="/" />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Route>
         
-        {/* Patient Routes */}
+        {/* Patient Routes - patient role only */}
         <Route element={<ProtectedRoute requiredRole="patient" />}>
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
           <Route path="/patient/find-doctor" element={<FindDoctor />} />
@@ -40,11 +40,11 @@ function App() {
           <Route path="/patient/prescriptions" element={<Prescriptions />} />
         </Route>
 
-        {/* Admin/Hospital Routes */}
+        {/* Admin/Hospital Routes - hospital or doctor roles only */}
         <Route 
           element={
             <ProtectedRoute 
-              requiredRole={null} /* Allow both hospital and doctor roles */
+              requireAuth={true}
               redirectPath="/patient-dashboard" 
             />
           }

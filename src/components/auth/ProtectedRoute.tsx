@@ -38,11 +38,15 @@ export const ProtectedRoute = ({
 
   // If specific role is required, check that too
   if (requiredRole && profile?.role !== requiredRole) {
-    if (profile?.role === "patient") {
+    // For patients trying to access admin routes
+    if (profile?.role === "patient" && (requiredRole === "hospital" || requiredRole === "doctor")) {
       return <Navigate to="/patient-dashboard" replace />;
-    } else if (profile?.role === "hospital" || profile?.role === "doctor") {
+    }
+    // For admins/doctors trying to access patient routes
+    else if ((profile?.role === "hospital" || profile?.role === "doctor") && requiredRole === "patient") {
       return <Navigate to="/admin-dashboard" replace />;
     }
+    // Default fallback
     return <Navigate to="/" replace />;
   }
 

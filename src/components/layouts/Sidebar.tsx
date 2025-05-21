@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +19,7 @@ import {
   User,
   Bed,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 type SidebarProps = {
   userRole: "admin" | "patient";
@@ -29,6 +29,8 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -36,6 +38,11 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
 
   const toggleMobileSidebar = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    // Navigation is handled in the AuthContext
   };
 
   const adminNavItems = [
@@ -172,13 +179,13 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
               <Settings className="h-5 w-5" />
               <span>Settings</span>
             </Link>
-            <Link
-              to="/"
-              className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700"
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-3 px-3 py-2 w-full text-left rounded-md hover:bg-gray-100 text-gray-700"
             >
               <LogOut className="h-5 w-5" />
               <span>Logout</span>
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
@@ -242,13 +249,13 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
               <Settings className="h-5 w-5" />
               {!collapsed && <span className="ml-3">Settings</span>}
             </Link>
-            <Link
-              to="/"
-              className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 text-gray-700"
+            <button
+              onClick={handleLogout}
+              className="flex items-center px-3 py-2 w-full text-left rounded-md hover:bg-gray-100 text-gray-700"
             >
               <LogOut className="h-5 w-5" />
               {!collapsed && <span className="ml-3">Logout</span>}
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
