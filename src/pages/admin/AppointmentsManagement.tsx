@@ -3,23 +3,9 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,11 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
-import { format } from "date-fns";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, User, UserCheck, Filter, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { getAllAppointments, updateAppointmentStatus, Appointment } from "@/services/appointmentsService";
+import AppointmentsTable from "@/components/admin/AppointmentsTable";
+import UpdateStatusDialog from "@/components/admin/UpdateStatusDialog";
 
 const AppointmentsManagement = () => {
   const { toast } = useToast();
@@ -106,46 +90,6 @@ const AppointmentsManagement = () => {
     }
   };
 
-  // Get status badge style based on status
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
-        return "bg-green-100 text-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Get status icon based on status
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <AlertCircle className="h-4 w-4" />;
-      case "confirmed":
-        return <UserCheck className="h-4 w-4" />;
-      case "completed":
-        return <CheckCircle className="h-4 w-4" />;
-      case "cancelled":
-        return <XCircle className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
-
-  // Format patient name
-  const formatPatientName = (appointment: Appointment) => {
-    if (appointment.patient && appointment.patient.first_name) {
-      return `${appointment.patient.first_name} ${appointment.patient.last_name || ''}`;
-    }
-    return `Patient ${appointment.patient_id.substring(0, 8)}`;
-  };
-
   return (
     <DashboardLayout userRole="admin">
       <div className="container mx-auto py-8">
@@ -190,72 +134,10 @@ const AppointmentsManagement = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-healthcare-primary"></div>
               </div>
             ) : filteredAppointments.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date & Time</TableHead>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Doctor</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAppointments.map((appointment) => (
-                      <TableRow key={appointment.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {format(new Date(appointment.appointment_date), 'MMM dd, yyyy')}
-                            </div>
-                            <div className="flex items-center text-sm text-muted-foreground mt-1">
-                              <Clock className="h-4 w-4 mr-1" />
-                              {appointment.start_time} - {appointment.end_time}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <User className="h-4 w-4 mr-1" />
-                            {formatPatientName(appointment)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            {appointment.doctor?.name || "Unknown"}
-                            <p className="text-xs text-muted-foreground">
-                              {appointment.doctor?.specialization}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs truncate">
-                            {appointment.reason || "No reason provided"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className={`px-2 py-1 rounded-full text-xs inline-flex items-center gap-1 font-medium ${getStatusBadge(appointment.status)}`}>
-                            {getStatusIcon(appointment.status)}
-                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleOpenStatusDialog(appointment)}
-                          >
-                            Update Status
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <AppointmentsTable 
+                appointments={filteredAppointments} 
+                onUpdateStatus={handleOpenStatusDialog}
+              />
             ) : (
               <div className="text-center py-12">
                 <Calendar className="h-12 w-12 mx-auto text-gray-400" />
@@ -270,69 +152,12 @@ const AppointmentsManagement = () => {
       </div>
 
       {/* Status Update Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Appointment Status</DialogTitle>
-            <DialogDescription>
-              Change the status for this appointment.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedAppointment && (
-            <div className="space-y-4">
-              <div className="border rounded-md p-3 bg-muted/30">
-                <p><strong>Date:</strong> {format(new Date(selectedAppointment.appointment_date), 'MMM dd, yyyy')}</p>
-                <p><strong>Time:</strong> {selectedAppointment.start_time} - {selectedAppointment.end_time}</p>
-                <p><strong>Doctor:</strong> {selectedAppointment.doctor?.name}</p>
-                <p><strong>Current Status:</strong> {selectedAppointment.status}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">New Status:</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant={selectedAppointment.status === "pending" ? "default" : "outline"}
-                    onClick={() => handleUpdateStatus("pending")}
-                    className="w-full justify-start"
-                  >
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Pending
-                  </Button>
-                  <Button 
-                    variant={selectedAppointment.status === "confirmed" ? "default" : "outline"}
-                    onClick={() => handleUpdateStatus("confirmed")}
-                    className="w-full justify-start"
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Confirmed
-                  </Button>
-                  <Button 
-                    variant={selectedAppointment.status === "completed" ? "default" : "outline"}
-                    onClick={() => handleUpdateStatus("completed")}
-                    className="w-full justify-start"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Completed
-                  </Button>
-                  <Button 
-                    variant={selectedAppointment.status === "cancelled" ? "destructive" : "outline"}
-                    onClick={() => handleUpdateStatus("cancelled")}
-                    className={`w-full justify-start ${selectedAppointment.status === "cancelled" ? "" : "text-destructive"}`}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Cancelled
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UpdateStatusDialog 
+        appointment={selectedAppointment}
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onStatusChange={handleUpdateStatus}
+      />
     </DashboardLayout>
   );
 };

@@ -1,5 +1,6 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ interface Doctor {
 
 const FindDoctor = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [specialization, setSpecialization] = useState("");
@@ -42,6 +44,11 @@ const FindDoctor = () => {
 
   const handleSearch = () => {
     setSearchQuery(searchTerm);
+  };
+
+  // Navigate to appointment booking with selected doctor
+  const handleBookAppointment = (doctor: Doctor) => {
+    navigate('/patient/appointments/new', { state: { selectedDoctor: doctor } });
   };
 
   // Filter doctors based on search term, specialization, and availability
@@ -157,7 +164,12 @@ const FindDoctor = () => {
                       <Calendar className="inline h-4 w-4 mr-1" /> 
                       Schedule: {doctor.schedule}
                     </p>
-                    <Button className="w-full mt-4" variant="outline">
+                    <Button 
+                      className="w-full mt-4" 
+                      variant="outline"
+                      onClick={() => handleBookAppointment(doctor)}
+                      disabled={!doctor.available}
+                    >
                       Book Appointment
                     </Button>
                   </div>
