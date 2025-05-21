@@ -50,9 +50,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
+      // Validate and cast the role to make sure it's one of our expected types
+      const validRoles = ["patient", "hospital", "doctor"] as const;
+      const role = validRoles.includes(data.role as any) 
+        ? data.role as "patient" | "hospital" | "doctor" 
+        : "patient"; // default to patient if invalid role
+
       // Add email from user data since it might not be in the profiles table directly
       const profileWithEmail: Profile = {
         ...data,
+        role,
         email: user?.email || null
       };
 
