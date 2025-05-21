@@ -50,7 +50,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      setProfile(data as Profile);
+      // Add email from user data since it might not be in the profiles table directly
+      const profileWithEmail: Profile = {
+        ...data,
+        email: user?.email || null
+      };
+
+      setProfile(profileWithEmail);
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast({

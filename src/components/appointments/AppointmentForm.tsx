@@ -16,9 +16,10 @@ import TimeSlotSelector, { calculateEndTime } from "./TimeSlotSelector";
 
 interface AppointmentFormProps {
   initialDoctor?: Doctor | null;
+  patientId?: string | null;
 }
 
-const AppointmentForm = ({ initialDoctor = null }: AppointmentFormProps) => {
+const AppointmentForm = ({ initialDoctor = null, patientId = null }: AppointmentFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -55,10 +56,10 @@ const AppointmentForm = ({ initialDoctor = null }: AppointmentFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!doctor || !date || !startTime) {
+    if (!doctor || !date || !startTime || !patientId) {
       toast({
         title: "Missing Fields",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields or login to continue.",
         variant: "destructive",
       });
       return;
@@ -66,9 +67,6 @@ const AppointmentForm = ({ initialDoctor = null }: AppointmentFormProps) => {
     
     const endTime = calculateEndTime(startTime);
     const formattedDate = format(date, "yyyy-MM-dd");
-    
-    // For demo purposes, use a fixed patient ID - in a real app this would come from auth context
-    const patientId = "123e4567-e89b-12d3-a456-426614174000";
     
     createAppointmentMutation.mutate({
       doctor_id: doctor.id,
@@ -119,7 +117,7 @@ const AppointmentForm = ({ initialDoctor = null }: AppointmentFormProps) => {
         <Button 
           type="submit" 
           className="bg-healthcare-primary"
-          disabled={!doctor || !date || !startTime || createAppointmentMutation.isPending}
+          disabled={!doctor || !date || !startTime || !patientId || createAppointmentMutation.isPending}
         >
           {createAppointmentMutation.isPending ? "Booking..." : "Book Appointment"}
         </Button>

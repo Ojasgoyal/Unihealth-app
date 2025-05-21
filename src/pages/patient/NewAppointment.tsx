@@ -28,7 +28,7 @@ const NewAppointment = () => {
           <CardContent>
             <AppointmentForm 
               initialDoctor={selectedDoctor} 
-              patientId={profile?.id} 
+              patientId={profile?.id || null} 
             />
           </CardContent>
         </Card>
