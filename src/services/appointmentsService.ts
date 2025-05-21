@@ -18,6 +18,10 @@ export interface Appointment {
     specialization: string;
     email: string;
   };
+  patient?: {
+    first_name?: string;
+    last_name?: string;
+  };
 }
 
 export interface CreateAppointmentData {
@@ -26,8 +30,8 @@ export interface CreateAppointmentData {
   appointment_date: string;
   start_time: string;
   end_time: string;
-  reason?: string;
-  notes?: string;
+  reason?: string | null;
+  notes?: string | null;
 }
 
 export const createAppointment = async (data: CreateAppointmentData): Promise<Appointment> => {
@@ -44,7 +48,14 @@ export const createAppointment = async (data: CreateAppointmentData): Promise<Ap
     const { data: appointment, error } = await supabase
       .from('appointments')
       .insert([appointmentData])
-      .select()
+      .select(`
+        *,
+        doctor:doctor_id (
+          name,
+          specialization,
+          email
+        )
+      `)
       .single();
     
     if (error) throw error;
@@ -82,7 +93,14 @@ export const getDoctorAppointments = async (doctorId: string): Promise<Appointme
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select('*')
+      .select(`
+        *,
+        doctor:doctor_id (
+          name,
+          specialization,
+          email
+        )
+      `)
       .eq('doctor_id', doctorId)
       .order('appointment_date', { ascending: true });
     
@@ -103,7 +121,14 @@ export const updateAppointmentStatus = async (
       .from('appointments')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        doctor:doctor_id (
+          name,
+          specialization,
+          email
+        )
+      `)
       .single();
     
     if (error) throw error;
@@ -175,9 +200,13 @@ export const getAllAppointments = async (): Promise<Appointment[]> => {
           name,
           specialization,
           email
+        ),
+        patient:patient_id (
+          first_name,
+          last_name
         )
       `)
-      .order('appointment_date', { ascending: true });
+      .order('appointment_date', { ascending: false });
     
     if (error) throw error;
     return data || [];

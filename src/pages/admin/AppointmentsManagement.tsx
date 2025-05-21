@@ -28,33 +28,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, User, UserCheck, Filter, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-
-// Appointment type - extend as needed
-interface Appointment {
-  id: string;
-  patient_id: string;
-  doctor_id: string;
-  appointment_date: string;
-  start_time: string;
-  end_time: string;
-  reason: string | null;
-  notes: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  doctor?: {
-    name: string;
-    specialization: string;
-  };
-  patient?: {
-    first_name?: string;
-    last_name?: string;
-  };
-}
+import { getAllAppointments, updateAppointmentStatus, Appointment } from "@/services/appointmentsService";
 
 const AppointmentsManagement = () => {
   const { toast } = useToast();
@@ -64,50 +41,22 @@ const AppointmentsManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Fetch all appointments with doctor details
+  // Fetch all appointments
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["admin-appointments", statusFilter],
     queryFn: async () => {
-      let query = supabase
-        .from('appointments')
-        .select(`
-          *,
-          doctor:doctor_id (name, specialization)
-        `)
-        .order('appointment_date', { ascending: false });
-      
+      const allAppointments = await getAllAppointments();
       if (statusFilter !== "all") {
-        query = query.eq('status', statusFilter);
+        return allAppointments.filter(app => app.status === statusFilter);
       }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      console.log("Appointments data:", data);
-      
-      // Since we don't have profiles table with patient info yet, we'll fake it
-      return data.map(appointment => ({
-        ...appointment,
-        patient: {
-          first_name: `Patient`,
-          last_name: `${appointment.patient_id.substring(0, 4)}`
-        }
-      }));
+      return allAppointments;
     }
   });
 
   // Update appointment status mutation
-  const updateAppointmentStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string, status: string }) => {
-      const { data, error } = await supabase
-        .from('appointments')
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select();
-      
-      if (error) throw error;
-      return data;
-    },
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string, status: string }) => 
+      updateAppointmentStatus(id, status as 'pending' | 'confirmed' | 'completed' | 'cancelled'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-appointments"] });
       toast({
@@ -116,7 +65,7 @@ const AppointmentsManagement = () => {
       });
       setIsDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error("Error updating status:", error);
       toast({
         variant: "destructive",
@@ -153,7 +102,7 @@ const AppointmentsManagement = () => {
 
   const handleUpdateStatus = (status: string) => {
     if (selectedAppointment) {
-      updateAppointmentStatus.mutate({ id: selectedAppointment.id, status });
+      updateStatusMutation.mutate({ id: selectedAppointment.id, status });
     }
   };
 
@@ -187,6 +136,14 @@ const AppointmentsManagement = () => {
       default:
         return null;
     }
+  };
+
+  // Format patient name
+  const formatPatientName = (appointment: Appointment) => {
+    if (appointment.patient && appointment.patient.first_name) {
+      return `${appointment.patient.first_name} ${appointment.patient.last_name || ''}`;
+    }
+    return `Patient ${appointment.patient_id.substring(0, 8)}`;
   };
 
   return (
@@ -256,16 +213,14 @@ const AppointmentsManagement = () => {
                             </div>
                             <div className="flex items-center text-sm text-muted-foreground mt-1">
                               <Clock className="h-4 w-4 mr-1" />
-                              {appointment.start_time.substring(0, 5)} - {appointment.end_time.substring(0, 5)}
+                              {appointment.start_time} - {appointment.end_time}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <User className="h-4 w-4 mr-1" />
-                            {appointment.patient 
-                              ? `${appointment.patient.first_name || ''} ${appointment.patient.last_name || ''}`
-                              : appointment.patient_id.substring(0, 8)}
+                            {formatPatientName(appointment)}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -328,7 +283,7 @@ const AppointmentsManagement = () => {
             <div className="space-y-4">
               <div className="border rounded-md p-3 bg-muted/30">
                 <p><strong>Date:</strong> {format(new Date(selectedAppointment.appointment_date), 'MMM dd, yyyy')}</p>
-                <p><strong>Time:</strong> {selectedAppointment.start_time.substring(0, 5)} - {selectedAppointment.end_time.substring(0, 5)}</p>
+                <p><strong>Time:</strong> {selectedAppointment.start_time} - {selectedAppointment.end_time}</p>
                 <p><strong>Doctor:</strong> {selectedAppointment.doctor?.name}</p>
                 <p><strong>Current Status:</strong> {selectedAppointment.status}</p>
               </div>

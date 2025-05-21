@@ -68,7 +68,7 @@ const NewAppointment = () => {
   const [notes, setNotes] = useState<string>("");
 
   // Fetch doctors
-  const { data: doctors = [] } = useQuery({
+  const { data: doctors = [], isLoading: isLoadingDoctors } = useQuery({
     queryKey: ['appointmentDoctors'],
     queryFn: getDoctors
   });
@@ -87,10 +87,11 @@ const NewAppointment = () => {
       });
       navigate("/patient/appointments");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error("Appointment creation error:", error);
       toast({
         title: "Error Booking Appointment",
-        description: error.message,
+        description: error.message || "There was a problem booking your appointment.",
         variant: "destructive",
       });
     },
@@ -112,7 +113,7 @@ const NewAppointment = () => {
     const endTime = calculateEndTime(startTime);
     const formattedDate = format(date, "yyyy-MM-dd");
     
-    // Hardcoded patient ID for demo - in a real app, this would come from authentication context
+    // For demo purposes, use a fixed patient ID - in a real app this would come from auth context
     const patientId = "123e4567-e89b-12d3-a456-426614174000";
     
     createAppointmentMutation.mutate({
@@ -121,8 +122,8 @@ const NewAppointment = () => {
       appointment_date: formattedDate,
       start_time: startTime,
       end_time: endTime,
-      reason: reason || null,
-      notes: notes || null
+      reason,
+      notes
     });
   };
 
@@ -158,11 +159,17 @@ const NewAppointment = () => {
                     <SelectValue placeholder="Select a doctor" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableDoctors.map((doc) => (
-                      <SelectItem key={doc.id} value={doc.id}>
-                        {doc.name} - {doc.specialization}
-                      </SelectItem>
-                    ))}
+                    {isLoadingDoctors ? (
+                      <SelectItem value="loading">Loading doctors...</SelectItem>
+                    ) : availableDoctors.length > 0 ? (
+                      availableDoctors.map((doc) => (
+                        <SelectItem key={doc.id} value={doc.id}>
+                          {doc.name} - {doc.specialization}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-doctors">No available doctors</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {doctor && (
