@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,14 +8,16 @@ import { FileText, Calendar, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Prescription, getPatientPrescriptions, getPrescriptionByAppointment } from "@/services/prescriptionsService";
 import { format, parseISO } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Prescriptions = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const appointmentId = searchParams.get('appointmentId');
   
-  // Hardcoded patient ID for demo - in a real app, this would come from authentication context
-  const patientId = "123e4567-e89b-12d3-a456-426614174000";
+  // Get the actual patient ID from auth context
+  const { profile } = useAuth();
+  const patientId = profile?.id;
   
   // If appointmentId is provided, fetch specific prescription
   const {
@@ -28,17 +29,30 @@ const Prescriptions = () => {
     enabled: !!appointmentId,
   });
   
-  // Fetch all patient prescriptions
+  // Only load prescriptions if we have a patient ID
   const {
     data: prescriptions = [],
     isLoading,
     error,
   } = useQuery({
     queryKey: ['patientPrescriptions', patientId],
-    queryFn: () => getPatientPrescriptions(patientId),
-    enabled: !appointmentId,
+    queryFn: () => getPatientPrescriptions(patientId!),
+    enabled: !!patientId && !appointmentId,
+    retry: 1
   });
   
+  // Handle error using useEffect instead of onError
+  useEffect(() => {
+    if (error) {
+      console.error("Failed to fetch prescriptions:", error);
+      toast({
+        variant: "destructive",
+        title: "Error loading prescriptions",
+        description: "There was a problem loading your prescriptions."
+      });
+    }
+  }, [error, toast]);
+
   // Dummy function for download - in a real app this would generate a PDF
   const handleDownload = () => {
     toast({
@@ -47,13 +61,15 @@ const Prescriptions = () => {
     });
   };
   
-  if (error) {
-    toast({
-      title: "Error loading prescriptions",
-      description: "There was a problem loading your prescriptions.",
-      variant: "destructive",
-    });
-  }
+  // Add logging to see patient ID
+  useEffect(() => {
+    console.log("Current patient ID:", patientId);
+  }, [patientId]);
+
+  // Log prescriptions when they arrive
+  useEffect(() => {
+    console.log("Loaded prescriptions:", prescriptions);
+  }, [prescriptions]);
 
   return (
     <DashboardLayout userRole="patient">

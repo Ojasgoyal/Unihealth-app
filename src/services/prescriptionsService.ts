@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface Prescription {
@@ -40,27 +39,55 @@ import { generateMockPrescriptions } from "./prescriptionsMockData";
 
 export const createPrescription = async (data: CreatePrescriptionData): Promise<Prescription> => {
   try {
+    console.log('Creating prescription with data:', data);
+    
+    // Ensure medications is an array
+    const medications = Array.isArray(data.medications) 
+      ? data.medications 
+      : [data.medications].filter(Boolean);
+    
+    // Ensure we're properly formatting the data for Supabase
+    const prescriptionData = {
+      ...data,
+      medications, // Ensure this is an array
+      status: data.status || "active",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('Sending to Supabase:', prescriptionData);
+    
     const { data: prescription, error } = await supabase
       .from('prescriptions')
-      .insert([{
-        ...data,
-        status: data.status || "active"
-      }])
-      .select()
+      .insert([prescriptionData])
+      .select(`
+        *,
+        doctor:doctor_id (name, specialization),
+        appointment:appointment_id (appointment_date)
+      `)
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error creating prescription:', error);
+      throw error;
+    }
+    
+    if (!prescription) {
+      throw new Error("Failed to create prescription - no data returned");
+    }
+    
+    console.log('Successfully created prescription:', prescription);
     return prescription;
   } catch (error) {
     console.error('Error creating prescription:', error);
-    // Generate a single mock prescription as fallback
-    return generateMockPrescriptions(1, data)[0];
+    throw error;
   }
 };
 
 export const getPatientPrescriptions = async (patientId: string): Promise<Prescription[]> => {
   try {
-    // Try to fetch prescriptions from the database
+    console.log('Fetching prescriptions for patient:', patientId);
+    // Fetch prescriptions from the database
     const { data: prescriptions, error } = await supabase
       .from('prescriptions')
       .select(`
@@ -71,18 +98,17 @@ export const getPatientPrescriptions = async (patientId: string): Promise<Prescr
       .eq('patient_id', patientId)
       .order('issue_date', { ascending: false });
     
-    if (error) throw error;
-    
-    // If we have data, return it
-    if (prescriptions && prescriptions.length > 0) {
-      return prescriptions;
+    if (error) {
+      console.error('Supabase error fetching prescriptions:', error);
+      throw error;
     }
     
-    throw new Error("No prescriptions found");
+    console.log('Fetched prescriptions:', prescriptions);
+    // Return empty array if no prescriptions found (don't throw error)
+    return prescriptions || [];
   } catch (error) {
     console.error('Error fetching patient prescriptions:', error);
-    // Return mock prescriptions as fallback
-    return generateMockPrescriptions(2, { patient_id: patientId });
+    throw error; // Re-throw instead of falling back to mock data
   }
 };
 
@@ -146,12 +172,14 @@ export const getAllPrescriptions = async (): Promise<Prescription[]> => {
       `)
       .order('issue_date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error fetching all prescriptions:', error);
+      throw error;
+    }
+    
     return data || [];
   } catch (error) {
     console.error('Error fetching all prescriptions:', error);
-    
-    // Return mock data as fallback
-    return generateMockPrescriptions(1);
+    throw error; // Re-throw instead of falling back to mock data
   }
 };

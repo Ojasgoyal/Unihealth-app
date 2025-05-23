@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
@@ -110,7 +109,7 @@ const PrescriptionsManagement = () => {
         });
       } else {
         // Create new prescription using our service
-        await createPrescription(prescriptionData);
+        result = await createPrescription(prescriptionData);
         toast({
           title: "Prescription created",
           description: "The prescription has been created successfully."
@@ -118,8 +117,12 @@ const PrescriptionsManagement = () => {
       }
       
       setIsDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["admin-prescriptions"] });
       
+      // Invalidate ALL queries that might depend on this data
+      queryClient.invalidateQueries({ queryKey: ["admin-prescriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["patientPrescriptions"] });
+      queryClient.invalidateQueries(); // Invalidate all queries to be safe
+    
     } catch (error) {
       console.error("Error saving prescription:", error);
       toast({

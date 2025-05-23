@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
@@ -6,10 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Calendar, Clock, MapPin, FileText, Plus } from "lucide-react";
+import { Calendar, Clock, FileText, Plus, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getPatientAppointments, Appointment } from "@/services/appointmentsService";
 import { format, parseISO } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 // Helper function to format time
 const formatTime = (timeString: string) => {
@@ -29,38 +37,78 @@ const formatTime = (timeString: string) => {
   
   return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
+import { useAuth } from "@/contexts/AuthContext";
+
+// Helper function to render status badge
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'confirmed':
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Confirmed</Badge>;
+    case 'pending':
+      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
+    case 'cancelled':
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>;
+    case 'completed':
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Completed</Badge>;
+    default:
+      return <Badge>{status}</Badge>;
+  }
+};
 
 const Appointments = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("upcoming");
-  
+  const { profile } = useAuth();
   // Hardcoded patient ID for demo - in a real app, this would come from authentication context
-  const patientId = "123e4567-e89b-12d3-a456-426614174000";
-  
+  const patientId = profile?.id;  
   // Fetch patient appointments
   const { data: appointments = [], isLoading, error } = useQuery({
     queryKey: ['patientAppointments', patientId],
     queryFn: () => getPatientAppointments(patientId),
+    // Only run the query if we have a patient ID
+    enabled: !!patientId,
   });
   
-  // Filter appointments based on active tab
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const upcomingAppointments = appointments.filter(app => {
-    const appDate = new Date(app.appointment_date);
-    return (appDate >= today && app.status !== 'cancelled');
+  // Filter appointments based on the selected tab
+  const filteredAppointments = appointments.filter(appointment => {
+    if (activeTab === "all") return true;
+    const today = new Date().toISOString().split('T')[0];
+    const appointmentDate = appointment.appointment_date;
+    
+    switch (activeTab) {
+      case "upcoming":
+        return appointmentDate > today && appointment.status !== "cancelled";
+      case "today":  // Add this case
+        return appointmentDate === today && appointment.status !== "cancelled";
+      case "past":
+        return appointmentDate < today || appointment.status === "completed";
+      case "cancelled":
+        return appointment.status === "cancelled";
+      default:
+        return true;
+    }
   });
   
-  const pastAppointments = appointments.filter(app => {
-    const appDate = new Date(app.appointment_date);
-    return (appDate < today || app.status === 'completed');
-  });
+  // Add a count for today's appointments
+  const todayCount = appointments.filter(app => {
+    const today = new Date().toISOString().split('T')[0];
+    return app.appointment_date === today && app.status !== "cancelled";
+  }).length;
   
-  const cancelledAppointments = appointments.filter(app => 
-    app.status === 'cancelled'
-  );
+  const upcomingCount = appointments.filter(app => {
+    const today = new Date().toISOString().split('T')[0];
+    return app.appointment_date > today && app.status !== "cancelled";
+  }).length;
+  
+  const pastCount = appointments.filter(app => {
+    const today = new Date().toISOString().split('T')[0];
+    return app.appointment_date < today || app.status === "completed";
+  }).length;
+  
+  const cancelledCount = appointments.filter(app => 
+    app.status === "cancelled"
+  ).length;
   
   if (error) {
     toast({
@@ -105,15 +153,18 @@ const Appointments = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="upcoming">
-                  Upcoming ({upcomingAppointments.length})
+                  Upcoming ({upcomingCount})
+                </TabsTrigger>
+                <TabsTrigger value="today">
+                  Today ({todayCount})
                 </TabsTrigger>
                 <TabsTrigger value="past">
-                  Past ({pastAppointments.length})
+                  Past ({pastCount})
                 </TabsTrigger>
                 <TabsTrigger value="cancelled">
-                  Cancelled ({cancelledAppointments.length})
+                  Cancelled ({cancelledCount})
                 </TabsTrigger>
               </TabsList>
               
@@ -125,51 +176,51 @@ const Appointments = () => {
                 ) : (
                   <>
                     <TabsContent value="upcoming">
-                      {upcomingAppointments.length > 0 ? (
-                        <div className="space-y-4">
-                          {upcomingAppointments.map((appointment) => (
-                            <div 
-                              key={appointment.id} 
-                              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                              onClick={() => handleViewDetails(appointment)}
-                            >
-                              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                                <div>
-                                  <h3 className="font-medium text-lg">
-                                    Dr. {appointment.doctor?.name || "Unknown Doctor"}
-                                  </h3>
-                                  <p className="text-healthcare-primary">
-                                    {appointment.doctor?.specialization}
-                                  </p>
-                                  <div className="flex items-center gap-6 mt-2">
-                                    <div className="flex items-center">
-                                      <Calendar className="h-4 w-4 mr-1 text-gray-500" />
-                                      <span className="text-sm">
-                                        {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
-                                      </span>
+                      {filteredAppointments.length > 0 ? (
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Doctor</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredAppointments.map((appointment) => (
+                                <TableRow key={appointment.id}>
+                                  <TableCell className="font-medium">
+                                    <div>
+                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
                                     </div>
-                                    <div className="flex items-center">
-                                      <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                                      <span className="text-sm">
-                                        {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="mt-4 md:mt-0 flex md:flex-col items-center gap-2">
-                                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                    {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                                  </span>
-                                  <Button variant="ghost" size="sm" onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewDetails(appointment);
-                                  }}>
-                                    View Details
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                                  </TableCell>
+                                  <TableCell>
+                                    {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(appointment.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="flex items-center gap-1"
+                                      onClick={() => handleViewDetails(appointment)}
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                      Details
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
                         </div>
                       ) : (
                         <div className="text-center py-12">
@@ -187,53 +238,121 @@ const Appointments = () => {
                       )}
                     </TabsContent>
                     
-                    <TabsContent value="past">
-                      {pastAppointments.length > 0 ? (
-                        <div className="space-y-4">
-                          {pastAppointments.map((appointment) => (
-                            <div 
-                              key={appointment.id} 
-                              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                              onClick={() => handleViewDetails(appointment)}
-                            >
-                              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                                <div>
-                                  <h3 className="font-medium text-lg">
-                                    Dr. {appointment.doctor?.name || "Unknown Doctor"}
-                                  </h3>
-                                  <p className="text-healthcare-primary">
-                                    {appointment.doctor?.specialization}
-                                  </p>
-                                  <div className="flex items-center gap-6 mt-2">
-                                    <div className="flex items-center">
-                                      <Calendar className="h-4 w-4 mr-1 text-gray-500" />
-                                      <span className="text-sm">
-                                        {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
-                                      </span>
+                    <TabsContent value="today">
+                      {filteredAppointments.length > 0 ? (
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Doctor</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredAppointments.map((appointment) => (
+                                <TableRow key={appointment.id}>
+                                  <TableCell className="font-medium">
+                                    <div>
+                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
                                     </div>
-                                  </div>
-                                </div>
-                                <div className="mt-4 md:mt-0 flex md:flex-col items-center gap-2">
-                                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                    Completed
-                                  </span>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="flex items-center gap-1"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Navigate to view prescription
-                                      navigate(`/patient/prescriptions?appointmentId=${appointment.id}`);
-                                    }}
-                                  >
-                                    <FileText className="h-3 w-3" />
-                                    View Prescription
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                                  </TableCell>
+                                  <TableCell>
+                                    {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(appointment.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="flex items-center gap-1"
+                                      onClick={() => handleViewDetails(appointment)}
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                      Details
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <Calendar className="h-12 w-12 mx-auto text-gray-400" />
+                          <h3 className="mt-4 text-lg font-medium">No appointments today</h3>
+                          <p className="mt-1 text-gray-500">You don't have any appointments scheduled for today</p>
+                        </div>
+                      )}
+                    </TabsContent>
+                    
+                    <TabsContent value="past">
+                      {filteredAppointments.length > 0 ? (
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Doctor</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredAppointments.map((appointment) => (
+                                <TableRow key={appointment.id}>
+                                  <TableCell className="font-medium">
+                                    <div>
+                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(appointment.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-col gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="flex items-center gap-1"
+                                        onClick={() => handleViewDetails(appointment)}
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                        Details
+                                      </Button>
+                                      {appointment.status === 'completed' && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="flex items-center gap-1"
+                                          onClick={() => navigate(`/patient/prescriptions?appointmentId=${appointment.id}`)}
+                                        >
+                                          <FileText className="h-4 w-4" />
+                                          Prescription
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
                         </div>
                       ) : (
                         <div className="text-center py-12">
@@ -245,38 +364,51 @@ const Appointments = () => {
                     </TabsContent>
                     
                     <TabsContent value="cancelled">
-                      {cancelledAppointments.length > 0 ? (
-                        <div className="space-y-4">
-                          {cancelledAppointments.map((appointment) => (
-                            <div 
-                              key={appointment.id} 
-                              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                                <div>
-                                  <h3 className="font-medium text-lg">
-                                    Dr. {appointment.doctor?.name || "Unknown Doctor"}
-                                  </h3>
-                                  <p className="text-healthcare-primary">
-                                    {appointment.doctor?.specialization}
-                                  </p>
-                                  <div className="flex items-center gap-6 mt-2">
-                                    <div className="flex items-center">
-                                      <Calendar className="h-4 w-4 mr-1 text-gray-500" />
-                                      <span className="text-sm">
-                                        {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
-                                      </span>
+                      {filteredAppointments.length > 0 ? (
+                        <div className="rounded-md border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Doctor</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {filteredAppointments.map((appointment) => (
+                                <TableRow key={appointment.id}>
+                                  <TableCell className="font-medium">
+                                    <div>
+                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
                                     </div>
-                                  </div>
-                                </div>
-                                <div className="mt-4 md:mt-0">
-                                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                                    Cancelled
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                                  </TableCell>
+                                  <TableCell>
+                                    {format(new Date(appointment.appointment_date), "MMM d, yyyy")}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatTime(appointment.start_time)} - {formatTime(appointment.end_time)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(appointment.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="flex items-center gap-1"
+                                      onClick={() => handleViewDetails(appointment)}
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                      Details
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
                         </div>
                       ) : (
                         <div className="text-center py-12">
