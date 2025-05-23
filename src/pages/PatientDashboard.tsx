@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,14 +8,17 @@ import { Calendar, Clock, FileText, Search, ArrowRight, MapPin } from "lucide-re
 import { useQuery } from "@tanstack/react-query";
 import { getDoctors } from "@/services/doctorsService";
 import { getPatientAppointments } from "@/services/appointmentsService";
-import { format } from "date-fns";
+import { getPatientPrescriptions } from "@/services/prescriptionsService";
+import { format, parseISO } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PatientDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   
-  // Hardcoded patient ID for demo - in a real app, this would come from authentication context
-  const patientId = "123e4567-e89b-12d3-a456-426614174000";
+  // Get the actual patient ID from auth context
+  const patientId = profile?.id;
   
   // Fetch a few doctors for recommendations
   const { data: doctors = [] } = useQuery({
@@ -40,6 +42,15 @@ const PatientDashboard = () => {
         })
         .slice(0, 2); // Show only first 2
     },
+    enabled: !!patientId,
+  });
+  
+  // Fetch patient's prescriptions
+  const { data: prescriptions = [] } = useQuery({
+    queryKey: ['dashboardPrescriptions', patientId],
+    queryFn: () => getPatientPrescriptions(patientId),
+    select: (data) => data.slice(0, 2), // Show only the 2 most recent prescriptions
+    enabled: !!patientId,
   });
 
   // Format time from database format
@@ -61,29 +72,11 @@ const PatientDashboard = () => {
     return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
 
-  // Mock recent prescriptions - in a real app, fetch from API
-  const recentPrescriptions = [
-    {
-      doctorName: "Dr. Sarah Johnson",
-      date: "April 30, 2025",
-      medications: ["Atenolol 50mg", "Aspirin 81mg"],
-      instructions: "Take once daily with food",
-      status: "Active"
-    },
-    {
-      doctorName: "Dr. Robert Miller",
-      date: "April 15, 2025",
-      medications: ["Amoxicillin 500mg"],
-      instructions: "Take three times daily for 10 days",
-      status: "Completed"
-    }
-  ];
-
   return (
     <DashboardLayout userRole="patient">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Welcome, John</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Welcome, {profile?.first_name || "Patient"}</h1>
           <p className="text-muted-foreground">Here's an overview of your healthcare information.</p>
         </div>
 
@@ -165,7 +158,7 @@ const PatientDashboard = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium">
-                            Dr. {appointment.doctor?.name || "Unknown"}
+                            {appointment.doctor?.name || "Unknown"}
                           </p>
                           <p className="text-sm text-gray-500">
                             {appointment.doctor?.specialization || "Specialist"}
@@ -223,18 +216,20 @@ const PatientDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {recentPrescriptions.length > 0 ? (
+              {prescriptions.length > 0 ? (
                 <div className="space-y-6">
-                  {recentPrescriptions.map((prescription, index) => (
-                    <div key={index} className="space-y-2">
+                  {prescriptions.map((prescription) => (
+                    <div key={prescription.id} className="space-y-2">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium">{prescription.doctorName}</p>
-                          <p className="text-sm text-gray-500">{prescription.date}</p>
+                          <p className="font-medium">{prescription.doctor?.name || "Unknown"}</p>
+                          <p className="text-sm text-gray-500">
+                            {format(parseISO(prescription.issue_date), "MMMM d, yyyy")}
+                          </p>
                         </div>
                         <span 
                           className={`text-xs px-2 py-1 rounded-full ${
-                            prescription.status === "Active" 
+                            prescription.status === "active" 
                               ? "bg-green-100 text-green-800" 
                               : "bg-gray-100 text-gray-800"
                           }`}

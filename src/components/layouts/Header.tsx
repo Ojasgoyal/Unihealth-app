@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Bell, Search, User, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,17 +42,20 @@ export const Header = ({ userRole }: HeaderProps) => {
     await signOut();
   };
 
-  // Use profile data if available, otherwise fall back to props
+  // Use real profile data without fallbacks to dummy data
   const userName = profile ? 
     `${profile.first_name || ''} ${profile.last_name || ''}` : 
-    (userRole === "admin" ? "Hospital Admin" : "John Smith");
+    "User";
   
-  const userEmail = profile?.email || 
-    (userRole === "admin" ? "admin@hospital.com" : "john.smith@example.com");
+  const userEmail = profile?.email || "";
   
   const userInitials = profile ? 
     `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}` : 
-    (userRole === "admin" ? "HA" : "JS");
+    "U";
+
+  // Get actual notifications - for now, we'll create a placeholder
+  // that shows no notifications instead of dummy data
+  const userNotifications = [];
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
@@ -82,53 +84,39 @@ export const Header = ({ userRole }: HeaderProps) => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
+                {userNotifications.length > 0 && (
+                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="max-h-80 overflow-auto">
-                {userRole === "admin" ? (
-                  <>
-                    <DropdownMenuItem className="p-3 cursor-pointer">
+                {userNotifications.length > 0 ? (
+                  userNotifications.map((notification, index) => (
+                    <DropdownMenuItem key={index} className="p-3 cursor-pointer">
                       <div>
-                        <p className="font-medium">New appointment request</p>
-                        <p className="text-sm text-gray-500">Dr. Smith has a new appointment request</p>
-                        <p className="text-xs text-gray-400 mt-1">5 mins ago</p>
+                        <p className="font-medium">{notification.title}</p>
+                        <p className="text-sm text-gray-500">{notification.description}</p>
+                        <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
                       </div>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="p-3 cursor-pointer">
-                      <div>
-                        <p className="font-medium">Low bed availability</p>
-                        <p className="text-sm text-gray-500">General ward is at 90% capacity</p>
-                        <p className="text-xs text-gray-400 mt-1">1 hour ago</p>
-                      </div>
-                    </DropdownMenuItem>
-                  </>
+                  ))
                 ) : (
-                  <>
-                    <DropdownMenuItem className="p-3 cursor-pointer">
-                      <div>
-                        <p className="font-medium">Appointment confirmed</p>
-                        <p className="text-sm text-gray-500">Your appointment with Dr. Jones has been confirmed</p>
-                        <p className="text-xs text-gray-400 mt-1">30 mins ago</p>
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="p-3 cursor-pointer">
-                      <div>
-                        <p className="font-medium">New prescription available</p>
-                        <p className="text-sm text-gray-500">Dr. Miller has uploaded a new prescription</p>
-                        <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
-                      </div>
-                    </DropdownMenuItem>
-                  </>
+                  <div className="p-4 text-center text-gray-500">
+                    <p>No new notifications</p>
+                  </div>
                 )}
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="justify-center text-center">
-                <Button variant="ghost" className="w-full">View all notifications</Button>
-              </DropdownMenuItem>
+              {userNotifications.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="justify-center text-center">
+                    <Button variant="ghost" className="w-full">View all notifications</Button>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -161,7 +149,7 @@ export const Header = ({ userRole }: HeaderProps) => {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

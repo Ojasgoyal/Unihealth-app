@@ -193,7 +193,7 @@ const Appointments = () => {
                                 <TableRow key={appointment.id}>
                                   <TableCell className="font-medium">
                                     <div>
-                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p>{appointment.doctor?.name || "Unknown Doctor"}</p>
                                       <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
                                     </div>
                                   </TableCell>
@@ -256,7 +256,7 @@ const Appointments = () => {
                                 <TableRow key={appointment.id}>
                                   <TableCell className="font-medium">
                                     <div>
-                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p>{appointment.doctor?.name || "Unknown Doctor"}</p>
                                       <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
                                     </div>
                                   </TableCell>
@@ -312,7 +312,7 @@ const Appointments = () => {
                                 <TableRow key={appointment.id}>
                                   <TableCell className="font-medium">
                                     <div>
-                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p>{appointment.doctor?.name || "Unknown Doctor"}</p>
                                       <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
                                     </div>
                                   </TableCell>
@@ -381,7 +381,7 @@ const Appointments = () => {
                                 <TableRow key={appointment.id}>
                                   <TableCell className="font-medium">
                                     <div>
-                                      <p>Dr. {appointment.doctor?.name || "Unknown Doctor"}</p>
+                                      <p>{appointment.doctor?.name || "Unknown Doctor"}</p>
                                       <p className="text-sm text-muted-foreground">{appointment.doctor?.specialization}</p>
                                     </div>
                                   </TableCell>

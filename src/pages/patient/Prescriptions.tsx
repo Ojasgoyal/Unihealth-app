@@ -122,7 +122,7 @@ const Prescriptions = () => {
                 <div className="bg-gray-50 p-4 rounded-md">
                   <h3 className="text-md font-medium">Prescribed By</h3>
                   <p className="text-gray-600">
-                    Dr. {specificPrescription.doctor?.name || "Unknown"}
+                    {specificPrescription.doctor?.name || "Unknown"}
                   </p>
                   <p className="text-sm text-gray-500">
                     {specificPrescription.doctor?.specialization}
@@ -165,7 +165,7 @@ const Prescriptions = () => {
                       </div>
                       
                       <p className="mt-2 font-medium">
-                        Dr. {prescription.doctor?.name || "Unknown"}
+                        {prescription.doctor?.name || "Unknown"}
                       </p>
                       <p className="text-sm text-gray-500">
                         {prescription.doctor?.specialization}
