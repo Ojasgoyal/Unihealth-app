@@ -57,11 +57,6 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
       icon: Users,
     },
     {
-      title: "Bed Availability",
-      href: "/admin/beds",
-      icon: Bed,
-    },
-    {
       title: "Appointments",
       href: "/admin/appointments",
       icon: Calendar,
