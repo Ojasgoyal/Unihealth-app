@@ -180,7 +180,7 @@ const Index = () => {
                 </ul>
                 <Button 
                   className="mt-6 w-full"
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate("/admin-dashboard")}
                 >
                   Admin Login
                 </Button>
