@@ -120,7 +120,7 @@ const Appointments = () => {
   
   // Navigate to book new appointment
   const handleBookNew = () => {
-    navigate("/patient/find-doctor");
+    navigate("/patient/appointments/new");
   };
   
   // View appointment details
