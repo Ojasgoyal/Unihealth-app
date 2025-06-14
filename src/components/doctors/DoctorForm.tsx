@@ -22,14 +22,20 @@ import { Doctor } from "@/services/doctorsService";
 
 // Specialization options
 export const specializations = [
+  "Anesthesiology",
   "Cardiology",
   "Dermatology",
   "Endocrinology",
+  "ENT",
   "Gastroenterology",
+  "General Medicine",
+  "General Surgery",
+  "Gynecology and Obstetrics",
   "Neurology",
   "Oncology",
   "Ophthalmology",
   "Orthopedics",
+  "Pathology",
   "Pediatrics",
   "Psychiatry",
   "Pulmonology",
